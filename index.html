@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Uma Mensagem Para Você</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=JetBrains+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #070913;
+      color: #f8fafc;
+      font-family: var(--font-sans);
+    }
+
+    /* Fullscreen interactive canvas */
+    #cosmos-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Subtle ambient radial glow that shifts color per emotional state */
+    #ambient-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      transition: background 1.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.4s ease;
+      background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.07) 0%, rgba(15, 23, 42, 0.02) 50%, transparent 75%);
+    }
+
+    /* Vignette overlay for depth and focus on the center text */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(2, 3, 8, 0.75) 100%);
+    }
+
+    /* Main typography styling */
+    .message-serif {
+      font-family: var(--font-serif);
+    }
+
+    .message-sans {
+      font-family: var(--font-sans);
+    }
+
+    .message-mono {
+      font-family: var(--font-mono);
+    }
+
+    /* Smooth slide transition classes */
+    .slide-content {
+      transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                  filter 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    .slide-hidden-next {
+      opacity: 0;
+      transform: translateY(22px) scale(0.985);
+      filter: blur(6px);
+    }
+
+    .slide-hidden-prev {
+      opacity: 0;
+      transform: translateY(-22px) scale(0.985);
+      filter: blur(6px);
+    }
+
+    .slide-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+    }
+
+    /* Gentle breathing animation for the tap prompt */
+    @keyframes pulsePrompt {
+      0%, 100% {
+        opacity: 0.45;
+        transform: translateY(0px);
+      }
+      50% {
+        opacity: 0.95;
+        transform: translateY(-3px);
+      }
+    }
+
+    .prompt-pulse {
+      animation: pulsePrompt 2.8s ease-in-out infinite;
+    }
+
+    /* Touch ripple ring on first slide */
+    @keyframes touchRing {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.85;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    .touch-indicator-ring {
+      animation: touchRing 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    /* Subtle glitch effect for Slide 11 (Code / Infinite Loop) */
+    @keyframes subtleGlitch {
+      0%, 92%, 100% {
+        transform: translate(0, 0);
+        text-shadow: 0 0 20px rgba(248, 113, 113, 0.15);
+      }
+      94% {
+        transform: translate(-1.5px, 0.5px);
+        text-shadow: -2px 0 rgba(239, 68, 68, 0.55), 2px 0 rgba(56, 189, 248, 0.55);
+      }
+      96% {
+        transform: translate(1.5px, -0.5px);
+        text-shadow: 2px 0 rgba(251, 191, 36, 0.55), -2px 0 rgba(56, 189, 248, 0.55);
+      }
+    }
+
+    .glitch-active {
+      animation: subtleGlitch 3.2s infinite;
+    }
+
+    /* Highlighted keywords inside slides */
+    .highlight-warm {
+      color: #fde68a;
+      text-shadow: 0 0 24px rgba(251, 191, 36, 0.35);
+    }
+
+    .highlight-physics {
+      color: #67e8f9;
+      font-family: var(--font-serif);
+      font-style: italic;
+      text-shadow: 0 0 24px rgba(34, 211, 238, 0.45);
+    }
+
+    .highlight-code {
+      color: #fca5a5;
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      padding: 0.08em 0.4em;
+      border-radius: 0.375rem;
+      text-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
+    }
+
+    .highlight-math {
+      color: #c4b5fd;
+      font-family: var(--font-serif);
+      font-style: italic;
+      text-shadow: 0 0 24px rgba(167, 139, 250, 0.45);
+    }
+
+    .highlight-void {
+      color: #94a3b8;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+    }
+
+    .highlight-love {
+      background: linear-gradient(135deg, #fecdd3 0%, #fda4af 45%, #f43f5e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(244, 63, 94, 0.35));
+    }
+  </style>
+</head>
+<body class="relative w-full h-full select-none overflow-hidden">
+
+  <!-- Dynamic Interactive Canvas -->
+  <canvas id="cosmos-canvas"></canvas>
+
+  <!-- Ambient Mood Glow -->
+  <div id="ambient-glow"></div>
+
+  <!-- Soft Vignette -->
+  <div class="vignette"></div>
+
+  <!-- Top Progress & Navigation Header -->
+  <header class="fixed top-0 left-0 right-0 z-30 flex flex-col">
+    <!-- Thin Progress Bar -->
+    <div class="w-full h-[3px] bg-white/5 overflow-hidden">
+      <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-400/70 via-indigo-300/80 to-rose-400/90 transition-all duration-700 ease-out" style="width: 5.88%;"></div>
+    </div>
+
+    <!-- Navigation Controls & State Indicator -->
+    <div class="w-full max-w-4xl mx-auto px-5 pt-4 pb-2 flex items-center justify-between text-xs sm:text-sm tracking-wider text-slate-400/80">
+      <!-- Back Button -->
+      <button
+        id="prev-btn"
+        type="button"
+        aria-label="Voltar para a parte anterior"
+        class="opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-slate-300 backdrop-blur-md"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Voltar</span>
+      </button>
+
+      <!-- Dynamic Context Badge (Subtle thematic indicator) -->
+      <div id="theme-badge" class="font-mono text-[11px] uppercase tracking-widest text-slate-400/70 transition-all duration-500">
+        01 // Prólogo
+      </div>
+
+      <!-- Slide Counter -->
+      <div id="slide-counter" class="font-mono text-xs text-slate-400/75 tabular-nums">
+        1 / 17
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Interactive Stage (Clicking/tapping anywhere advances the story) -->
+  <main
+    id="interactive-stage"
+    role="button"
+    tabindex="0"
+    aria-label="Toque para avançar a mensagem"
+    class="relative z-20 w-full h-full flex flex-col items-center justify-center px-6 sm:px-12 md:px-20 cursor-pointer focus:outline-none"
+  >
+    <!-- Centered Message Container -->
+    <article class="w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto py-12">
+      <!-- Subtle decorative top icon/symbol that adapts to the theme -->
+      <div id="slide-ornament" class="mb-6 text-slate-400/60 transition-all duration-700 flex items-center justify-center h-8">
+        <!-- Injected dynamically -->
+      </div>
+
+      <!-- The Message Text -->
+      <div
+        id="message-container"
+        class="slide-content slide-visible w-full"
+      >
+        <p
+          id="message-text"
+          class="text-2xl sm:text-3xl md:text-4xl leading-relaxed sm:leading-relaxed md:leading-relaxed font-light text-slate-100 tracking-wide"
+        >
+          <!-- Populated by JS -->
+        </p>
+      </div>
+
+      <!-- Live Interactive Sub-Caption (For Math/Physics/Code/Finale visual context) -->
+      <div
+        id="interactive-subcaption"
+        class="mt-8 min-h-[28px] font-mono text-xs sm:text-sm tracking-widest text-slate-400/75 transition-opacity duration-700 opacity-0"
+      >
+      </div>
+    </article>
+  </main>
+
+  <!-- Bottom Prompt / Replay Footer -->
+  <footer class="fixed bottom-0 left-0 right-0 z-30 pb-7 pt-4 px-6 flex flex-col items-center justify-center pointer-events-none">
+    <!-- Tap to continue prompt -->
+    <div id="tap-prompt" class="flex flex-col items-center gap-2.5 prompt-pulse transition-opacity duration-500">
+      <!-- Visual Touch Indicator (Highlighted on first slides) -->
+      <div id="touch-icon-wrapper" class="relative flex items-center justify-center w-8 h-8">
+        <span class="touch-indicator-ring absolute inset-0 rounded-full border border-sky-300/50"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-sky-200/80 shadow-[0_0_12px_rgba(186,230,253,0.9)]"></span>
+      </div>
+      <p id="tap-prompt-text" class="text-xs sm:text-sm uppercase tracking-[0.2em] text-slate-300/85 font-light text-center">
+        Toque em qualquer lugar na tela para continuar
+      </p>
+    </div>
+
+    <!-- Replay Button (Only shown on the final slide) -->
+    <button
+      id="replay-btn"
+      type="button"
+      class="hidden pointer-events-auto mt-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-rose-300/30 text-rose-100 text-xs sm:text-sm tracking-widest uppercase transition-all duration-500 backdrop-blur-md shadow-[0_0_25px_rgba(244,63,94,0.2)] items-center gap-2"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      </svg>
+      <span>Ler a mensagem novamente</span>
+    </button>
+  </footer>
+
+  <script>
+    /**
+     * ============================================================================
+     * STORY SLIDES & VISUAL ATMOSPHERE DEFINITIONS
+     * ============================================================================
+     */
+    const slides = [
+      {
+        id: 0,
+        badge: "01 // Prólogo",
+        mode: "stardust_calm",
+        bgHex: [7, 9, 19],
+        glow: "radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.09) 0%, rgba(15, 23, 42, 0.03) 55%, transparent 75%)",
+        typography: "serif-hero",
+        html: `Oie, <span class="italic text-sky-200">meu bem</span>.`,
+        subcaption: "",
+        ornament: `<svg class="w-6 h-6 text-sky-300/70" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
+      },
+      {
+        id: 1,
+        badge: "02 // A Promessa",
+        mode: "stardust_calm",
+        bgHex: [8, 11, 22],
+        glow: "radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Em nosso último encontro falei que aquela seria a <span class="text-white font-medium">última surpresa</span>, e é verdade.`,
+        subcaption: "",
+        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-sky-300/60"></span>`
+      },
+      {
+        id: 2,
+        badge: "03 // Previsível?",
+        mode: "stardust_calm",
+        bgHex: [9, 12, 26],
+        glow: "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Em tão pouco tempo fiz tantos sites para demonstrar e falar o que sinto e penso que já deve ter se tornado previsível — algo que se espera que eu faça e que vá receber a notificação do link a qualquer momento.`,
+        subcaption: "",
+        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-indigo-300/60"></span>`
+      },
+      {
+        id: 3,
+        badge: "04 // Mais Que Um Site",
+        mode: "stardust_calm",
+        bgHex: [11, 13, 28],
+        glow: "radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.1) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Saiba que eu amo fazê-los porque sei que te faz muito feliz, e isso me deixa feliz.<br><br><span class="message-serif italic text-2xl sm:text-3xl md:text-4xl text-indigo-200">Não quero que entenda esse site como mais um semelhante aos outros, mas como uma mensagem.</span>`,
+        subcaption: "",
+        ornament: `<svg class="w-5 h-5 text-indigo-300/70" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>`
+      },
+      {
+        id: 4,
+        badge: "05 // Felicidade",
+        mode: "stardust_warm",
+        bgHex: [14, 12, 29],
+        glow: "radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.11) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Eu me sinto muito feliz de termos chegado até esse ponto, e tu facilmente consegue ver isso porque não me contenho <span class="text-purple-200/90 font-normal">kkkk</span>.`,
+        subcaption: "",
+        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-purple-300/60"></span>`
+      },
+      {
+        id: 5,
+        badge: "06 // Confiança",
+        mode: "stardust_warm",
+        bgHex: [19, 13, 33],
+        glow: "radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.1) 0%, rgba(147, 51, 234, 0.08) 45%, transparent 75%)",
+        typography: "serif-emotional",
+        html: `Conquistar a tua confiança ao ponto de contar sobre si mesma para mim cada vez mais, só me dá motivos para <span class="highlight-warm">te amar cada vez mais</span>.`,
+        subcaption: "",
+        ornament: `<svg class="w-5 h-5 text-amber-300/70" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>`
+      },
+      {
+        id: 6,
+        badge: "07 // O Motivo",
+        mode: "stardust_warm",
+        bgHex: [22, 14, 34],
+        glow: "radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.11) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Mas então, por que essa é a última surpresa? É a última pra sempre?<br><br><span class="message-serif italic text-3xl sm:text-4xl text-amber-200">Não é a última.</span>`,
+        subcaption: "",
+        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-amber-300/70"></span>`
+      },
+      {
+        id: 7,
+        badge: "08 // Transbordando",
+        mode: "stardust_warm",
+        bgHex: [24, 15, 32],
+        glow: "radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.13) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Eu realmente não gostaria de te apressar, mas <span class="text-amber-100 font-medium">não consigo mais me conter</span>.`,
+        subcaption: "",
+        ornament: `<span class="w-2 h-2 rounded-full bg-amber-300/80 animate-ping"></span>`
+      },
+      {
+        id: 8,
+        badge: "09 // Contar Para O Mundo",
+        mode: "echo_voices",
+        bgHex: [14, 24, 26],
+        glow: "radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.13) 0%, rgba(251, 191, 36, 0.09) 45%, transparent 75%)",
+        typography: "sans-clean",
+        html: `Gostaria de falar sobre nós para todos: para meus pais, minhas tias e tios, meus primos e primas, para meu avô e avó e até para os animais que eles criam.<br><br><span class="text-emerald-200">Adoraria ouvir os papagaios repetindo teu nome de tanto que falei pra eles sobre tu.</span>`,
+        subcaption: "((( som da tua presença ecoando em cada conversa )))",
+        ornament: `<svg class="w-6 h-6 text-emerald-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>`
+      },
+      {
+        id: 9,
+        badge: "10 // Vertigem",
+        mode: "vortex_mind",
+        bgHex: [19, 13, 30],
+        glow: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.14) 0%, rgba(139, 92, 246, 0.1) 50%, transparent 75%)",
+        typography: "sans-clean",
+        html: `Eu gostaria que nossa relação não fosse algo escondido e que pudéssemos ficar juntos mesmo em público.<br><br>Pensar que não posso fazer tudo isso é algo que se torna quase insustentável para a minha cabeça. <span class="text-rose-200 font-medium">Minha mente fica uma loucura...</span>`,
+        subcaption: "⟳ pensamentos acelerando em espiral",
+        ornament: `<svg class="w-6 h-6 text-rose-300/80 animate-spin" style="animation-duration: 6s;" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`
+      },
+      {
+        id: 10,
+        badge: "11 // Singularidade Física",
+        mode: "dirac_delta",
+        bgHex: [5, 16, 28],
+        glow: "radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.18) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 75%)",
+        typography: "serif-emotional",
+        html: `Se ela fosse uma função, explodiria que nem uma <span class="highlight-physics">Delta de Dirac</span> que não se pode calcular...`,
+        subcaption: "δ(x - x₀) → ∞   |   ∫₋∞⁺∞ δ(x) dx = 1",
+        ornament: `<span class="font-mono text-sm text-cyan-300/90 border border-cyan-400/30 px-2.5 py-0.5 rounded-full bg-cyan-950/40">δ(x) = ∞</span>`
+      },
+      {
+        id: 11,
+        badge: "12 // Erro de Sistema & Loop Infinito",
+        mode: "code_glitch",
+        bgHex: [18, 8, 14],
+        glow: "radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.16) 0%, rgba(245, 158, 11, 0.08) 50%, transparent 75%)",
+        typography: "code-hybrid",
+        html: `...como um <span class="highlight-code">;</span> faltando em uma linha de código, causando erro em todo o programa.<br><br>Os pensamentos não param, como um <span class="highlight-code">loop infinito</span> que processa mais de um milhão de informações por segundo, travando todo o sistema.`,
+        subcaption: "while (pensando_em_tu) { amor++; } // 1.000.000+ ops/s",
+        ornament: `<span class="font-mono text-xs text-red-300/90 border border-red-400/40 px-2.5 py-0.5 rounded bg-red-950/50">SyntaxError: missing ';'</span>`
+      },
+      {
+        id: 12,
+        badge: "13 // Hiperespaço & Álgebra",
+        mode: "hyper_matrix",
+        bgHex: [12, 10, 28],
+        glow: "radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.16) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 75%)",
+        typography: "serif-emotional",
+        html: `É como o <span class="highlight-math">determinante de uma matriz não quadrada</span>.<br><br>Como um <span class="highlight-math">sistema com infinitas dimensões</span>.`,
+        subcaption: "det(Aₘₓₙ) = indefinido (m ≠ n)   |   dim(V) → ∞",
+        ornament: `<span class="font-mono text-xs text-violet-300/90 border border-violet-400/30 px-2.5 py-0.5 rounded-full bg-violet-950/40">ℝ^∞</span>`
+      },
+      {
+        id: 13,
+        badge: "14 // Vazio Cósmico",
+        mode: "dark_galaxy",
+        bgHex: [2, 2, 5],
+        glow: "radial-gradient(circle at 50% 50%, rgba(148, 163, 184, 0.05) 0%, transparent 65%)",
+        typography: "serif-emotional",
+        html: `Como uma <span class="highlight-void italic">galáxia sem estrelas</span>...<br><br>É exatamente esse <span class="destaque-vazio">o vazio que sinto só de imaginar te perder</span>, <span class="destaque-amor">justamente porque te amo demais</span>.`,
+        subcaption: "[ todas as estrelas se apagam sem você ]",
+        ornament: `<span class="w-2 h-2 rounded-full border border-slate-500/60"></span>`
+      },
+      {
+        id: 14,
+        badge: "15 // Meu Pedido",
+        mode: "stars_reborn",
+        bgHex: [10, 14, 29],
+        glow: "radial-gradient(circle at 50% 50%, rgba(125, 211, 252, 0.13) 0%, rgba(192, 132, 252, 0.08) 50%, transparent 75%)",
+        typography: "sans-clean",
+        html: `Sou muito paciente, mas não tão resistente pra conseguir guardar tudo pra mim.<br><br>Por isso estou pedindo, <span class="text-sky-200 font-medium">com carinho</span>, que me dê a sua resposta — e, quem sabe, em uma surpresa ou em um momento planejado por você.`,
+        subcaption: "✦ as estrelas voltam a brilhar no seu tempo ✦",
+        ornament: `<svg class="w-5 h-5 text-sky-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>`
+      },
+      {
+        id: 15,
+        badge: "16 // Sem Pressa",
+        mode: "stars_reborn",
+        bgHex: [14, 13, 30],
+        glow: "radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.12) 0%, transparent 70%)",
+        typography: "sans-clean",
+        html: `Não precisa responder à mensagem no momento em que receber; ela já estava programada para ser enviada em algum horário e dia.<br><br><span class="text-violet-200/95">Se eu disser que estava tudo planejado, será que acreditaria? kkkkk</span>`,
+        subcaption: "",
+        ornament: `<svg class="w-5 h-5 text-violet-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+      },
+      {
+        id: 16,
+        badge: "17 // Para Sempre",
+        mode: "finale_love",
+        bgHex: [20, 10, 26],
+        glow: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.20) 0%, rgba(168, 85, 247, 0.12) 45%, transparent 75%)",
+        typography: "serif-finale",
+        html: `Era isso que tinha pra dizer.<br><br><span class="highlight-love text-4xl sm:text-5xl md:text-6xl font-semibold italic block mt-4">Te amo, minha princesa.</span>`,
+        subcaption: "♥",
+        ornament: `<svg class="w-7 h-7 text-rose-400 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`
+      }
+    ];
+
+    /**
+     * ============================================================================
+     * STATE MANAGEMENT & DOM ELEMENTS
+     * ============================================================================
+     */
+    let currentIndex = 0;
+    let isTransitioning = false;
+
+    const stageEl = document.getElementById('interactive-stage');
+    const messageContainer = document.getElementById('message-container');
+    const messageText = document.getElementById('message-text');
+    const subcaptionEl = document.getElementById('interactive-subcaption');
+    const ornamentEl = document.getElementById('slide-ornament');
+    const progressBar = document.getElementById('progress-bar');
+    const slideCounter = document.getElementById('slide-counter');
+    const themeBadge = document.getElementById('theme-badge');
+    const prevBtn = document.getElementById('prev-btn');
+    const tapPrompt = document.getElementById('tap-prompt');
+    const tapPromptText = document.getElementById('tap-prompt-text');
+    const touchIconWrapper = document.getElementById('touch-icon-wrapper');
+    const replayBtn = document.getElementById('replay-btn');
+    const ambientGlow = document.getElementById('ambient-glow');
+
+    /**
+     * ============================================================================
+     * CANVAS ENGINE: PARTICLES, PHYSICS, CODE, MATRICES & COSMOS
+     * ============================================================================
+     */
+    const canvas = document.getElementById('cosmos-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Smoothly interpolated background RGB
+    let currentBg = [7, 9, 19];
+    let targetBg = [7, 9, 19];
+
+    // Current visual mode
+    let activeMode = "stardust_calm";
+    let modeTime = 0;
+
+    // Interactive click ripples
+    const tapRipples = [];
+
+    // Soundwave echo rings (for Slide 8)
+    const echoWaves = [];
+
+    // Particles pool
+    const PARTICLE_COUNT = 110;
+    const particles = [];
+
+    // Floating code/math fragments for slides 10, 11, 12
+    const floatingFragments = [
+      { text: "δ(x - x₀) = ∞", x: 0.15, y: 0.22, speed: 0.0003, type: "dirac" },
+      { text: "∫₋∞⁺∞ δ(x)dx = 1", x: 0.78, y: 0.28, speed: 0.00025, type: "dirac" },
+      { text: "lim ε→0⁺ (1/√πϵ)·e^(-x²/ϵ²)", x: 0.18, y: 0.78, speed: 0.0002, type: "dirac" },
+      { text: "f(x₀) = ∫ f(x)δ(x - x₀)dx", x: 0.72, y: 0.74, speed: 0.00035, type: "dirac" },
+
+      { text: "SyntaxError: missing ';' at line 143", x: 0.12, y: 0.20, speed: 0.0012, type: "code" },
+      { text: "while (pensando_em_tu) { amor++; }", x: 0.65, y: 0.24, speed: 0.0015, type: "code" },
+      { text: "CPU_LOAD: 1,048,576 ops/sec [OVERFLOW]", x: 0.14, y: 0.77, speed: 0.0014, type: "code" },
+      { text: "FATAL: stack_overflow_exception // mente_travada", x: 0.58, y: 0.82, speed: 0.0011, type: "code" },
+      { text: "if (!com_voce) throw new Error('Insustentável');", x: 0.25, y: 0.14, speed: 0.0013, type: "code" },
+
+      { text: "det(Aₘₓₙ) = undefined (m ≠ n)", x: 0.14, y: 0.24, speed: 0.0004, type: "matrix" },
+      { text: "dim(V) → ∞", x: 0.78, y: 0.22, speed: 0.0003, type: "matrix" },
+      { text: "⌈ a₁₁  a₁₂  a₁₃ ⌉", x: 0.16, y: 0.74, speed: 0.00035, type: "matrix" },
+      { text: "⌊ a₂₁  a₂₂  a₂₃ ⌋  (2×3)", x: 0.16, y: 0.78, speed: 0.00035, type: "matrix" },
+      { text: "∑ cᵢvᵢ ∈ ℝ^∞", x: 0.74, y: 0.76, speed: 0.0004, type: "matrix" }
+    ];
+
+    // Shooting stars for Finale
+    const shootingStars = [];
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Initialize particles
+    function initParticles() {
+      particles.length = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 1.9 + 0.5,
+          baseAlpha: Math.random() * 0.65 + 0.2,
+          alpha: Math.random() * 0.65 + 0.2,
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: -Math.random() * 0.4 - 0.1,
+          angle: Math.random() * Math.PI * 2,
+          orbitRadius: Math.random() * Math.min(width, height) * 0.42 + 30,
+          orbitSpeed: (Math.random() * 0.015 + 0.006) * (Math.random() < 0.5 ? 1 : -1),
+          twinkleSpeed: Math.random() * 0.03 + 0.01,
+          twinklePhase: Math.random() * Math.PI * 2,
+          hue: 210
+        });
+      }
+    }
+    initParticles();
+
+    // Add a tap ripple at (x, y)
+    function createTapRipple(x, y) {
+      tapRipples.push({
+        x,
+        y,
+        radius: 4,
+        maxRadius: 110,
+        alpha: 0.45
+      });
+    }
+
+    // 4D Hypercube (Tesseract) vertices for Slide 12
+    const tesseractVertices = [];
+    for (let i = 0; i < 16; i++) {
+      tesseractVertices.push([
+        (i & 1) ? 1 : -1,
+        (i & 2) ? 1 : -1,
+        (i & 4) ? 1 : -1,
+        (i & 8) ? 1 : -1
+      ]);
+    }
+    const tesseractEdges = [];
+    for (let i = 0; i < 16; i++) {
+      for (let j = i + 1; j < 16; j++) {
+        let diff = i ^ j;
+        if (diff && !(diff & (diff - 1))) {
+          tesseractEdges.push([i, j]);
+        }
+      }
+    }
+
+    /**
+     * Draw Slide 10: Dirac Delta Function δ(x)
+     */
+    function drawDiracDelta(time) {
+      const cx = width / 2;
+      const cy = height * 0.62;
+      const axisWidth = Math.min(width * 0.78, 680);
+
+      ctx.save();
+      // Coordinate axes
+      ctx.strokeStyle = "rgba(103, 232, 249, 0.18)";
+      ctx.lineWidth = 1;
+
+      // X-axis
+      ctx.beginPath();
+      ctx.moveTo(cx - axisWidth / 2, cy);
+      ctx.lineTo(cx + axisWidth / 2, cy);
+      ctx.stroke();
+
+      // Y-axis
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 50);
+      ctx.lineTo(cx, height * 0.12);
+      ctx.stroke();
+
+      // Animated Gaussian spike approaching Dirac Delta
+      const pulse = 0.5 + 0.5 * Math.sin(time * 2.4);
+      const epsilon = 14 + pulse * 18; // narrow width
+      const peakHeight = Math.min(height * 0.48, 360) + (1 - pulse) * 70;
+
+      ctx.beginPath();
+      for (let px = -axisWidth / 2; px <= axisWidth / 2; px += 3) {
+        const xScreen = cx + px;
+        const yOffset = peakHeight * Math.exp(-(px * px) / (2 * epsilon * epsilon));
+        const ripple = Math.sin(px * 0.08 - time * 4) * 3 * Math.exp(-Math.abs(px) * 0.015);
+        const yScreen = cy - yOffset + ripple;
+        if (px === -axisWidth / 2) {
+          ctx.moveTo(xScreen, yScreen);
+        } else {
+          ctx.lineTo(xScreen, yScreen);
+        }
+      }
+
+      ctx.strokeStyle = "rgba(34, 211, 238, 0.55)";
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = "rgba(34, 211, 238, 0.8)";
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+
+      // Glowing vertical singularity beam at x = 0
+      const grad = ctx.createLinearGradient(cx, cy, cx, height * 0.1);
+      grad.addColorStop(0, "rgba(34, 211, 238, 0.45)");
+      grad.addColorStop(0.7, "rgba(165, 243, 252, 0.75)");
+      grad.addColorStop(1, "rgba(34, 211, 238, 0)");
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, height * 0.1);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Draw floating Dirac equations
+      drawFloatingTexts("dirac", "rgba(103, 232, 249, 0.25)");
+    }
+
+    /**
+     * Draw Slide 11: Code Glitch & Infinite Loop
+     */
+    function drawCodeGlitch(time) {
+      ctx.save();
+
+      // Subtle horizontal scanlines / glitch bars
+      if (Math.random() < 0.28) {
+        const barY = Math.random() * height;
+        const barH = Math.random() * 16 + 2;
+        ctx.fillStyle = Math.random() < 0.5
+          ? "rgba(239, 68, 68, 0.06)"
+          : "rgba(251, 191, 36, 0.05)";
+        ctx.fillRect(0, barY, width, barH);
+      }
+
+      // Live rapidly incrementing operation counter in background
+      const opsCount = Math.floor(1000000 + ((time * 843219) % 8999999)).toLocaleString('pt-BR');
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillStyle = "rgba(248, 113, 113, 0.22)";
+      ctx.textAlign = "center";
+      ctx.fillText(`PROCESS_LOOP_COUNT: ${opsCount} ops/sec`, width / 2, height * 0.17);
+
+      ctx.restore();
+
+      drawFloatingTexts("code", "rgba(252, 165, 165, 0.22)");
+    }
+
+    /**
+     * Draw Slide 12: 4D Rotating Hypercube & Non-Square Matrix
+     */
+    function drawHyperMatrix(time) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const scale = Math.min(width, height) * 0.17;
+
+      const angleXW = time * 0.55;
+      const angleYW = time * 0.38;
+      const angleXY = time * 0.25;
+
+      const projected = tesseractVertices.map(v => {
+        let [x, y, z, w] = v;
+
+        // Rotate XW
+        let x1 = x * Math.cos(angleXW) - w * Math.sin(angleXW);
+        let w1 = x * Math.sin(angleXW) + w * Math.cos(angleXW);
+        x = x1; w = w1;
+
+        // Rotate YW
+        let y1 = y * Math.cos(angleYW) - w * Math.sin(angleYW);
+        let w2 = y * Math.sin(angleYW) + w * Math.cos(angleYW);
+        y = y1; w = w2;
+
+        // Rotate XY
+        let x2 = x * Math.cos(angleXY) - y * Math.sin(angleXY);
+        let y2 = x * Math.sin(angleXY) + y * Math.cos(angleXY);
+        x = x2; y = y2;
+
+        // 4D to 3D perspective
+        const distance4D = 2.6;
+        const wFactor = 1 / (distance4D - w);
+        const x3 = x * wFactor;
+        const y3 = y * wFactor;
+        const z3 = z * wFactor;
+
+        // 3D to 2D perspective
+        const distance3D = 2.8;
+        const zFactor = 1 / (distance3D - z3);
+
+        return {
+          px: cx + x3 * zFactor * scale * 2.2,
+          py: cy + y3 * zFactor * scale * 2.2
+        };
+      });
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(167, 139, 250, 0.20)";
+      ctx.lineWidth = 1.2;
+
+      for (const [i, j] of tesseractEdges) {
+        ctx.beginPath();
+        ctx.moveTo(projected[i].px, projected[i].py);
+        ctx.lineTo(projected[j].px, projected[j].py);
+        ctx.stroke();
+      }
+
+      // Vertices dots
+      ctx.fillStyle = "rgba(196, 181, 253, 0.45)";
+      for (const p of projected) {
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      drawFloatingTexts("matrix", "rgba(196, 181, 253, 0.24)");
+    }
+
+    /**
+     * Draw Slide 13: Dark Galaxy Without Stars (Faint lonely dust ring)
+     */
+    function drawDarkGalaxy(time) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const rx = Math.min(width, height) * 0.34;
+      const ry = rx * 0.35;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.22 + Math.sin(time * 0.2) * 0.04);
+
+      for (let i = 1; i <= 3; i++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rx * (0.65 + i * 0.15), ry * (0.65 + i * 0.15), 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(148, 163, 184, ${0.07 - i * 0.015})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /**
+     * Helper to render floating math/code fragments on Slides 10, 11, 12
+     */
+    function drawFloatingTexts(type, color) {
+      ctx.save();
+      ctx.font = `${width < 640 ? 11 : 13}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = color;
+
+      for (const item of floatingFragments) {
+        if (item.type !== type) continue;
+        item.y -= item.speed;
+        if (item.y < 0.08) item.y = 0.88;
+
+        const px = item.x * width;
+        const py = item.y * height;
+        ctx.fillText(item.text, px, py);
+      }
+      ctx.restore();
+    }
+
+    /**
+     * Main 60FPS Animation Loop
+     */
+    let lastTimestamp = performance.now();
+
+    function animate(timestamp) {
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+      lastTimestamp = timestamp;
+      modeTime += dt;
+
+      // Smoothly interpolate background color
+      for (let c = 0; c < 3; c++) {
+        currentBg[c] += (targetBg[c] - currentBg[c]) * 0.05;
+      }
+
+      ctx.fillStyle = `rgb(${Math.round(currentBg[0])}, ${Math.round(currentBg[1])}, ${Math.round(currentBg[2])})`;
+      ctx.fillRect(0, 0, width, height);
+
+      // Mode-specific background drawings
+      if (activeMode === "dirac_delta") {
+        drawDiracDelta(modeTime);
+      } else if (activeMode === "code_glitch") {
+        drawCodeGlitch(modeTime);
+      } else if (activeMode === "hyper_matrix") {
+        drawHyperMatrix(modeTime);
+      } else if (activeMode === "dark_galaxy") {
+        drawDarkGalaxy(modeTime);
+      }
+
+      // Slide 8: Concentric echo soundwaves (repeating her name aloud)
+      if (activeMode === "echo_voices") {
+        if (Math.random() < 0.035 || echoWaves.length === 0) {
+          echoWaves.push({
+            r: 10,
+            maxR: Math.min(width, height) * 0.46,
+            alpha: 0.32
+          });
+        }
+      }
+
+      for (let i = echoWaves.length - 1; i >= 0; i--) {
+        const wave = echoWaves[i];
+        wave.r += 1.15;
+        wave.alpha *= 0.988;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2, wave.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(110, 231, 183, ${wave.alpha})`;
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+        ctx.restore();
+
+        if (wave.alpha < 0.015 || wave.r > wave.maxR) {
+          echoWaves.splice(i, 1);
+        }
+      }
+
+      // Update & Draw Particles according to current narrative mode
+      const cx = width / 2;
+      const cy = height / 2;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.twinklePhase += p.twinkleSpeed;
+        const twinkle = 0.65 + 0.35 * Math.sin(p.twinklePhase);
+
+        let targetAlpha = p.baseAlpha * twinkle;
+        let fillStyle = `rgba(226, 232, 240, ${p.alpha})`;
+
+        if (activeMode === "stardust_calm") {
+          p.x += p.vx;
+          p.y += p.vy;
+          fillStyle = `rgba(186, 230, 253, ${p.alpha})`;
+        } else if (activeMode === "stardust_warm") {
+          p.x += p.vx * 1.3;
+          p.y += p.vy * 1.4;
+          fillStyle = i % 2 === 0
+            ? `rgba(253, 230, 138, ${p.alpha})`
+            : `rgba(216, 180, 254, ${p.alpha})`;
+        } else if (activeMode === "echo_voices") {
+          p.x += Math.sin(modeTime * 1.5 + i) * 0.45;
+          p.y += p.vy * 1.6;
+          fillStyle = i % 2 === 0
+            ? `rgba(110, 231, 183, ${p.alpha})`
+            : `rgba(253, 224, 71, ${p.alpha})`;
+        } else if (activeMode === "vortex_mind") {
+          // Swirling erratic vortex around the center
+          p.angle += p.orbitSpeed * 2.8;
+          const targetX = cx + Math.cos(p.angle) * p.orbitRadius;
+          const targetY = cy + Math.sin(p.angle) * p.orbitRadius;
+          p.x += (targetX - p.x) * 0.08;
+          p.y += (targetY - p.y) * 0.08;
+          fillStyle = `rgba(251, 113, 133, ${p.alpha})`;
+        } else if (activeMode === "dirac_delta") {
+          // Drawn toward x = center, shooting upward
+          p.x += (cx - p.x) * 0.015 + p.vx * 2;
+          p.y += p.vy * 4.5;
+          fillStyle = `rgba(103, 232, 249, ${p.alpha})`;
+        } else if (activeMode === "code_glitch") {
+          // High speed horizontal/vertical data stream
+          p.x += (i % 2 === 0 ? 1 : -1) * 4.2;
+          fillStyle = i % 3 === 0
+            ? `rgba(248, 113, 113, ${p.alpha})`
+            : `rgba(251, 191, 36, ${p.alpha * 0.8})`;
+        } else if (activeMode === "hyper_matrix") {
+          p.x += p.vx * 0.8;
+          p.y += p.vy * 0.8;
+          fillStyle = `rgba(196, 181, 253, ${p.alpha})`;
+        } else if (activeMode === "dark_galaxy") {
+          // Stars extinguish! Almost pitch black void
+          targetAlpha = 0.015;
+          p.x += p.vx * 0.15;
+          p.y += p.vy * 0.15;
+          fillStyle = `rgba(148, 163, 184, ${p.alpha})`;
+        } else if (activeMode === "stars_reborn") {
+          p.x += p.vx * 0.9;
+          p.y += p.vy * 0.9;
+          targetAlpha = (p.baseAlpha + 0.2) * twinkle;
+          fillStyle = i % 2 === 0
+            ? `rgba(186, 230, 253, ${p.alpha})`
+            : `rgba(221, 214, 254, ${p.alpha})`;
+        } else if (activeMode === "finale_love") {
+          p.x += Math.sin(modeTime + i) * 0.25;
+          p.y += p.vy * 1.1;
+          targetAlpha = (p.baseAlpha + 0.25) * twinkle;
+          fillStyle = i % 2 === 0
+            ? `rgba(254, 205, 211, ${p.alpha})`
+            : `rgba(253, 230, 138, ${p.alpha})`;
+        }
+
+        // Smooth alpha transition (crucial for Slide 13 extinguishing and Slide 14 reigniting)
+        p.alpha += (targetAlpha - p.alpha) * 0.06;
+
+        // Screen wrap-around
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+
+      // Finale shooting stars
+      if (activeMode === "finale_love" && Math.random() < 0.03) {
+        shootingStars.push({
+          x: Math.random() * width * 0.8,
+          y: Math.random() * height * 0.4,
+          vx: 6 + Math.random() * 4,
+          vy: 2.5 + Math.random() * 2,
+          len: 55 + Math.random() * 35,
+          alpha: 0.9
+        });
+      }
+
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const st = shootingStars[i];
+        st.x += st.vx;
+        st.y += st.vy;
+        st.alpha *= 0.96;
+
+        ctx.save();
+        const grad = ctx.createLinearGradient(
+          st.x, st.y,
+          st.x - st.vx * (st.len / 8),
+          st.y - st.vy * (st.len / 8)
+        );
+        grad.addColorStop(0, `rgba(254, 205, 211, ${st.alpha})`);
+        grad.addColorStop(1, "rgba(254, 205, 211, 0)");
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(st.x, st.y);
+        ctx.lineTo(st.x - st.vx * (st.len / 8), st.y - st.vy * (st.len / 8));
+        ctx.stroke();
+        ctx.restore();
+
+        if (st.alpha < 0.03) {
+          shootingStars.splice(i, 1);
+        }
+      }
+
+      // Draw interactive tap ripples
+      for (let i = tapRipples.length - 1; i >= 0; i--) {
+        const r = tapRipples[i];
+        r.radius += (r.maxRadius - r.radius) * 0.12;
+        r.alpha *= 0.92;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(226, 232, 240, ${r.alpha})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+
+        if (r.alpha < 0.02) {
+          tapRipples.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    /**
+     * ============================================================================
+     * SLIDE RENDERING & NAVIGATION LOGIC
+     * ============================================================================
+     */
+    function applyTypographyStyle(type) {
+      messageText.className = "transition-all duration-500 ";
+
+      if (type === "serif-hero") {
+        messageText.className += "message-serif text-4xl sm:text-5xl md:text-6xl font-normal text-slate-100 tracking-wide leading-tight";
+      } else if (type === "serif-emotional") {
+        messageText.className += "message-serif text-2xl sm:text-4xl md:text-[42px] font-normal text-slate-100 leading-relaxed sm:leading-relaxed";
+      } else if (type === "code-hybrid") {
+        messageText.className += "message-sans text-xl sm:text-2xl md:text-3xl font-light text-slate-100 leading-relaxed sm:leading-relaxed glitch-active";
+      } else if (type === "serif-finale") {
+        messageText.className += "message-serif text-3xl sm:text-4xl md:text-5xl font-normal text-slate-100 leading-relaxed";
+      } else {
+        // default 'sans-clean'
+        messageText.className += "message-sans text-xl sm:text-2xl md:text-[28px] font-light text-slate-100/95 leading-relaxed sm:leading-relaxed tracking-wide";
+      }
+    }
+
+    function renderSlide(index, direction = "next") {
+      const slide = slides[index];
+
+      // Update visual canvas state
+      activeMode = slide.mode;
+      targetBg = [...slide.bgHex];
+      ambientGlow.style.background = slide.glow;
+
+      // Update header UI
+      const progressPercent = ((index + 1) / slides.length) * 100;
+      progressBar.style.width = `${progressPercent}%`;
+      slideCounter.textContent = `${index + 1} / ${slides.length}`;
+      themeBadge.textContent = slide.badge;
+
+      // Back button visibility
+      if (index > 0) {
+        prevBtn.classList.remove("opacity-0", "pointer-events-none");
+        prevBtn.classList.add("opacity-100", "pointer-events-auto");
+      } else {
+        prevBtn.classList.add("opacity-0", "pointer-events-none");
+        prevBtn.classList.remove("opacity-100", "pointer-events-auto");
+      }
+
+      // Update ornament & subcaption
+      ornamentEl.innerHTML = slide.ornament || "";
+      if (slide.subcaption) {
+        subcaptionEl.textContent = slide.subcaption;
+        subcaptionEl.classList.remove("opacity-0");
+        subcaptionEl.classList.add("opacity-100");
+      } else {
+        subcaptionEl.classList.remove("opacity-100");
+        subcaptionEl.classList.add("opacity-0");
+      }
+
+      // Update Typography & HTML content
+      applyTypographyStyle(slide.typography);
+      messageText.innerHTML = slide.html;
+
+      // Update bottom prompt / replay button
+      if (index === 0) {
+        tapPrompt.classList.remove("hidden");
+        touchIconWrapper.classList.remove("hidden");
+        tapPromptText.textContent = "Toque em qualquer lugar na tela para começar";
+        replayBtn.classList.add("hidden");
+        replayBtn.classList.remove("flex");
+      } else if (index < slides.length - 1) {
+        tapPrompt.classList.remove("hidden");
+        touchIconWrapper.classList.add("hidden");
+        tapPromptText.textContent = "Toque na tela para continuar";
+        replayBtn.classList.add("hidden");
+        replayBtn.classList.remove("flex");
+      } else {
+        // Final slide (Slide 16)
+        tapPrompt.classList.add("hidden");
+        replayBtn.classList.remove("hidden");
+        replayBtn.classList.add("flex");
+      }
+    }
+
+    function goToSlide(newIndex, direction = "next") {
+      if (isTransitioning) return;
+      if (newIndex < 0 || newIndex >= slides.length) return;
+
+      isTransitioning = true;
+      currentIndex = newIndex;
+
+      // Animate out current text
+      messageContainer.classList.remove("slide-visible");
+      messageContainer.classList.add(direction === "next" ? "slide-hidden-prev" : "slide-hidden-next");
+      subcaptionEl.classList.remove("opacity-100");
+      subcaptionEl.classList.add("opacity-0");
+
+      setTimeout(() => {
+        // Position incoming slide from opposite side
+        messageContainer.style.transition = "none";
+        messageContainer.classList.remove("slide-hidden-prev", "slide-hidden-next");
+        messageContainer.classList.add(direction === "next" ? "slide-hidden-next" : "slide-hidden-prev");
+
+        renderSlide(currentIndex, direction);
+
+        // Force reflow
+        void messageContainer.offsetWidth;
+
+        // Animate in new text
+        messageContainer.style.transition = "";
+        messageContainer.classList.remove("slide-hidden-next", "slide-hidden-prev");
+        messageContainer.classList.add("slide-visible");
+
+        setTimeout(() => {
+          isTransitioning = false;
+        }, 520);
+      }, 420);
+    }
+
+    /**
+     * ============================================================================
+     * EVENT LISTENERS (TAP, CLICK, KEYBOARD, REPLAY)
+     * ============================================================================
+     */
+    stageEl.addEventListener("click", (e) => {
+      createTapRipple(e.clientX || width / 2, e.clientY || height / 2);
+      if (currentIndex < slides.length - 1) {
+        goToSlide(currentIndex + 1, "next");
+      }
+    });
+
+    prevBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (currentIndex > 0) {
+        goToSlide(currentIndex - 1, "prev");
+      }
+    });
+
+    replayBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      goToSlide(0, "prev");
+    });
+
+    // Keyboard navigation support
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (currentIndex < slides.length - 1) {
+          createTapRipple(width / 2, height / 2);
+          goToSlide(currentIndex + 1, "next");
+        }
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (currentIndex > 0) {
+          goToSlide(currentIndex - 1, "prev");
+        }
+      }
+    });
+
+    // Initialize on load
+    window.onload = function () {
+      renderSlide(0, "next");
+      requestAnimationFrame(animate);
+    };
+  </script>
+</body>
+</html>
