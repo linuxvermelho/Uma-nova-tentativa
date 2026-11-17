@@ -1,1229 +1,1269 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Uma Mensagem Para Você</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=JetBrains+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10091f">
+  <meta name="description" content="O céu que marca este momento — uma carta celeste romântica para Amanda.">
+  <title>Nosso Céu — Amanda ✦</title>
   <style>
     :root {
-      --font-serif: 'Cormorant Garamond', Georgia, serif;
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --bg: #0b0717;
+      --panel: rgba(24, 13, 44, .78);
+      --line: rgba(235, 203, 255, .2);
+      --text: #fff5ff;
+      --muted: #c6b5d8;
+      --pink: #ffb4df;
+      --purple: #c7a0ff;
+      --gold: #ffe4ad;
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #070913;
-      color: #f8fafc;
-      font-family: var(--font-sans);
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      background:
+        radial-gradient(ellipse at 12% 15%, #3d1857 0, transparent 36%),
+        radial-gradient(ellipse at 88% 35%, #30164e 0, transparent 33%),
+        linear-gradient(155deg, #090612, #170b2a 54%, #080714);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* Fullscreen interactive canvas */
-    #cosmos-canvas {
+    /* Trava a rolagem enquanto a animação da viagem estiver ativa */
+    body.intro-lock {
+      overflow: hidden;
+    }
+
+    /* ==========================================================================
+       ESTILOS DA ANIMAÇÃO DE ABERTURA (VIAGEM ESPACIAL)
+       ========================================================================== */
+    #intro-overlay {
       position: fixed;
       inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
+      z-index: 9999;
+      background: radial-gradient(ellipse at 52% 48%, #160c2a 0%, #080414 48%, #020106 100%);
+      transition: opacity 1.5s ease, visibility 1.5s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #intro-overlay.is-hidden {
+      opacity: 0;
+      visibility: hidden;
       pointer-events: none;
     }
 
-    /* Subtle ambient radial glow that shifts color per emotional state */
-    #ambient-glow {
-      position: fixed;
+    #intro-sky {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    .intro-nebula {
+      pointer-events: none;
+      position: absolute;
+      inset: -18%;
+      z-index: 0;
+      opacity: .36;
+      background:
+        radial-gradient(ellipse at 26% 44%, rgba(103, 32, 181, .17), transparent 34%),
+        radial-gradient(ellipse at 73% 52%, rgba(213, 59, 154, .12), transparent 30%),
+        radial-gradient(ellipse at 54% 76%, rgba(37, 74, 174, .10), transparent 35%);
+      filter: blur(25px);
+    }
+
+    .intro-message {
+      position: absolute;
       inset: 0;
       z-index: 2;
-      pointer-events: none;
-      transition: background 1.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.4s ease;
-      background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.07) 0%, rgba(15, 23, 42, 0.02) 50%, transparent 75%);
-    }
-
-    /* Vignette overlay for depth and focus on the center text */
-    .vignette {
-      position: fixed;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      background: radial-gradient(circle at 50% 50%, transparent 45%, rgba(2, 3, 8, 0.75) 100%);
-    }
-
-    /* Main typography styling */
-    .message-serif {
-      font-family: var(--font-serif);
-    }
-
-    .message-sans {
-      font-family: var(--font-sans);
-    }
-
-    .message-mono {
-      font-family: var(--font-mono);
-    }
-
-    /* Smooth slide transition classes */
-    .slide-content {
-      transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-                  transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-                  filter 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-      will-change: opacity, transform, filter;
-    }
-
-    .slide-hidden-next {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 24px calc(28px + env(safe-area-inset-bottom));
+      text-align: center;
       opacity: 0;
-      transform: translateY(22px) scale(0.985);
-      filter: blur(6px);
+      transform: translateY(12px) scale(.985);
+      transition: opacity 1.35s ease, transform 1.35s ease;
+      pointer-events: none;
     }
 
-    .slide-hidden-prev {
-      opacity: 0;
-      transform: translateY(-22px) scale(0.985);
-      filter: blur(6px);
+    #intro-overlay.waiting-to-continue {
+      cursor: pointer;
     }
 
-    .slide-visible {
+    #intro-overlay.waiting-to-continue .intro-message {
       opacity: 1;
       transform: translateY(0) scale(1);
-      filter: blur(0px);
     }
 
-    /* Gentle breathing animation for the tap prompt */
-    @keyframes pulsePrompt {
-      0%, 100% {
-        opacity: 0.45;
-        transform: translateY(0px);
-      }
-      50% {
-        opacity: 0.95;
-        transform: translateY(-3px);
-      }
+    .intro-message .sparkle {
+      margin-bottom: 22px;
+      color: #e8c5ff;
+      font-size: 1.15rem;
+      letter-spacing: .55em;
+      padding-left: .55em;
+      opacity: .9;
+      animation: glow 2.8s ease-in-out infinite alternate;
     }
 
-    .prompt-pulse {
-      animation: pulsePrompt 2.8s ease-in-out infinite;
+    .intro-message h2 {
+      margin: 0 0 20px;
+      font-size: clamp(2rem, 7vw, 4.3rem);
+      font-weight: 400;
+      letter-spacing: .025em;
+      line-height: 1.15;
+      color: #fff5ff;
+      text-shadow: 0 0 18px rgba(224, 159, 255, .46), 0 0 42px rgba(173, 93, 239, .29);
     }
 
-    /* Touch ripple ring on first slide */
-    @keyframes touchRing {
-      0% {
-        transform: scale(0.8);
-        opacity: 0.85;
-      }
-      100% {
-        transform: scale(2.2);
+    .intro-message p {
+      width: min(640px, 100%);
+      margin: 0;
+      font-size: clamp(1.05rem, 3.7vw, 1.45rem);
+      font-weight: 400;
+      line-height: 1.75;
+      color: rgba(255, 239, 255, .94);
+      text-shadow: 0 0 16px rgba(177, 117, 255, .28);
+    }
+
+    .intro-message .tap-hint {
+      margin-top: 30px;
+      font: 600 .76rem/1.5 system-ui, sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: rgba(231, 203, 255, .86);
+      animation: hintPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes hintPulse {
+      from { text-shadow: 0 0 5px rgba(210, 155, 255, .18); }
+      to   { text-shadow: 0 0 15px rgba(210, 155, 255, .75); }
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 6px rgba(217, 165, 255, .25); }
+      to   { text-shadow: 0 0 20px rgba(217, 165, 255, .85); }
+    }
+
+    /* ==========================================================================
+       ESTILOS DO SITE PRINCIPAL (NOSSO CÉU)
+       ========================================================================== */
+    #dust {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    header {
+      max-width: 1180px;
+      margin: auto;
+      padding: 25px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font: .76rem Arial, sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .logo { color: var(--pink); }
+    header a { color: var(--muted); text-decoration: none; }
+
+    .hero {
+      min-height: 78vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 70px 22px 95px;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .hero:before, .hero:after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      border: 1px solid rgba(230, 194, 255, .12);
+      border-radius: 50%;
+      width: min(76vw, 720px);
+      aspect-ratio: 1;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .hero:after {
+      width: min(60vw, 570px);
+      box-shadow: 0 0 80px #a74cff0b, inset 0 0 80px #a74cff0b;
+    }
+
+    .kicker {
+      font: .72rem Arial, sans-serif;
+      letter-spacing: .26em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    h1 {
+      font-weight: normal;
+      font-size: clamp(3rem, 8.5vw, 7rem);
+      line-height: .97;
+      letter-spacing: -.04em;
+      margin: 24px 0;
+    }
+
+    h1 em {
+      font-weight: normal;
+      color: var(--pink);
+      text-shadow: 0 0 40px #f59bdb40;
+    }
+
+    .intro {
+      max-width: 670px;
+      margin: 0 auto 30px;
+      color: #e0d4eb;
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+      line-height: 1.8;
+    }
+
+    .btn {
+      display: inline-block;
+      background: linear-gradient(110deg, #ffb4df, #d6b1ff);
+      color: #241032;
+      text-decoration: none;
+      border: 0;
+      border-radius: 99px;
+      padding: 14px 22px;
+      font: .75rem Arial, sans-serif;
+      font-weight: bold;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    section {
+      max-width: 1120px;
+      margin: auto;
+      padding: 72px 6%;
+    }
+
+    .sectionhead {
+      text-align: center;
+      margin-bottom: 34px;
+    }
+
+    .sectionhead h2 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: normal;
+      margin: 13px 0;
+    }
+
+    .sectionhead p {
+      max-width: 650px;
+      margin: auto;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: clamp(16px, 3vw, 30px);
+      box-shadow: 0 28px 90px #0003;
+      backdrop-filter: blur(12px);
+    }
+
+    .mapmeta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      font: .7rem Arial, sans-serif;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 4px 18px;
+    }
+
+    .status { color: #b9ffdc; }
+
+    .skybox {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+      aspect-ratio: 1;
+      background: #070611;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid #f1d8ff40;
+      box-shadow: 0 0 70px #ad55ff13;
+    }
+
+    #sky {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: pan-y;
+    }
+
+    .mapcaption {
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: .95rem;
+      max-width: 660px;
+      margin: 24px auto 0;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    label {
+      display: block;
+      font: .7rem Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 13px;
+      background: #0d091a;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font: 1rem Arial, sans-serif;
+    }
+
+    .control-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .hint {
+      font: .76rem Arial, sans-serif;
+      color: #aa9cbd;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    /* ==========================================================================
+       CARROSSEL DE CARDS (TEXTOS MAIORES, CENTRALIZADOS E COM SETAS)
+       ========================================================================== */
+    .cards-carousel {
+      position: relative;
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .cards-viewport {
+      width: 100%;
+      position: relative;
+    }
+
+    .card {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: clamp(32px, 6vw, 58px) clamp(24px, 6vw, 64px);
+      background: rgba(26, 16, 48, .76);
+      box-shadow: 0 28px 90px #0004, inset 0 0 40px rgba(199, 160, 255, .05);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      animation: cardFadeIn .55s ease;
+    }
+
+    .card.active {
+      display: block;
+    }
+
+    @keyframes cardFadeIn {
+      from {
         opacity: 0;
+        transform: translateY(10px) scale(.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
       }
     }
 
-    .touch-indicator-ring {
-      animation: touchRing 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    .icon {
+      font-size: 2.5rem;
+      color: var(--pink);
+      text-shadow: 0 0 24px rgba(255, 180, 223, .45);
     }
 
-    /* Subtle glitch effect for Slide 11 (Code / Infinite Loop) */
-    @keyframes subtleGlitch {
-      0%, 92%, 100% {
-        transform: translate(0, 0);
-        text-shadow: 0 0 20px rgba(248, 113, 113, 0.15);
+    .card h3 {
+      font-size: clamp(1.65rem, 3.6vw, 2.35rem);
+      font-weight: normal;
+      color: var(--text);
+      margin: 16px 0 18px;
+    }
+
+    .card p {
+      max-width: 650px;
+      margin: 0 auto;
+      color: #ede2f8;
+      font-size: clamp(1.12rem, 2.2vw, 1.38rem);
+      line-height: 1.85;
+    }
+
+    .carousel-arrow {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(24, 13, 44, .88);
+      color: var(--pink);
+      font-size: 1.35rem;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+      box-shadow: 0 10px 30px #0004;
+      user-select: none;
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(255, 180, 223, .16);
+      border-color: var(--pink);
+      transform: scale(1.07);
+    }
+
+    .carousel-arrow:active {
+      transform: scale(.96);
+    }
+
+    .carousel-nav-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .carousel-dots {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .carousel-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      border: 0;
+      padding: 0;
+      background: rgba(235, 203, 255, .28);
+      cursor: pointer;
+      transition: width .25s ease, background .25s ease;
+    }
+
+    .carousel-dot.active {
+      width: 26px;
+      background: var(--pink);
+    }
+
+    .quote {
+      text-align: center;
+      max-width: 800px;
+      margin: auto;
+      padding: 25px 0 75px;
+    }
+
+    .quote blockquote {
+      font-size: clamp(1.6rem, 4vw, 3.1rem);
+      line-height: 1.4;
+      margin: 20px 0;
+      color: #ffe9f7;
+    }
+
+    .quote cite {
+      font: .72rem Arial, sans-serif;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 20px 45px;
+      color: #9e8eb4;
+      font: .7rem Arial, sans-serif;
+      letter-spacing: .08em;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 700px) {
+      header { padding: 20px 6%; }
+      .hero { min-height: 72vh; padding-top: 60px; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      section { padding-top: 55px; padding-bottom: 55px; }
+      .mapmeta { font-size: .62rem; }
+      .cards-carousel {
+        flex-wrap: wrap;
+        gap: 14px;
       }
-      94% {
-        transform: translate(-1.5px, 0.5px);
-        text-shadow: -2px 0 rgba(239, 68, 68, 0.55), 2px 0 rgba(56, 189, 248, 0.55);
+      .cards-viewport {
+        order: 1;
       }
-      96% {
-        transform: translate(1.5px, -0.5px);
-        text-shadow: 2px 0 rgba(251, 191, 36, 0.55), -2px 0 rgba(56, 189, 248, 0.55);
+      .carousel-arrow {
+        order: 2;
+        width: 46px;
+        height: 46px;
       }
     }
 
-    .glitch-active {
-      animation: subtleGlitch 3.2s infinite;
-    }
-
-    /* Highlighted keywords inside slides */
-    .highlight-warm {
-      color: #fde68a;
-      text-shadow: 0 0 24px rgba(251, 191, 36, 0.35);
-    }
-
-    .highlight-physics {
-      color: #67e8f9;
-      font-family: var(--font-serif);
-      font-style: italic;
-      text-shadow: 0 0 24px rgba(34, 211, 238, 0.45);
-    }
-
-    .highlight-code {
-      color: #fca5a5;
-      font-family: var(--font-mono);
-      font-size: 0.9em;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.28);
-      padding: 0.08em 0.4em;
-      border-radius: 0.375rem;
-      text-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
-    }
-
-    .highlight-math {
-      color: #c4b5fd;
-      font-family: var(--font-serif);
-      font-style: italic;
-      text-shadow: 0 0 24px rgba(167, 139, 250, 0.45);
-    }
-
-    .highlight-void {
-      color: #94a3b8;
-      text-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
-    }
-
-    .highlight-love {
-      background: linear-gradient(135deg, #fecdd3 0%, #fda4af 45%, #f43f5e 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 25px rgba(244, 63, 94, 0.35));
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; animation: none !important; }
     }
   </style>
 </head>
-<body class="relative w-full h-full select-none overflow-hidden">
+<body class="intro-lock">
 
-  <!-- Dynamic Interactive Canvas -->
-  <canvas id="cosmos-canvas"></canvas>
+  <!-- ========================================================================
+       1. TELA DA VIAGEM ESPACIAL (ANIMAÇÃO DO SITE 2)
+       ======================================================================== -->
+  <div id="intro-overlay">
+    <canvas id="intro-sky" aria-hidden="true"></canvas>
+    <div class="intro-nebula" aria-hidden="true"></div>
+    <div class="intro-message" aria-live="polite" aria-atomic="true">
+      <div class="sparkle" aria-hidden="true">✦ · ✧ · ✦</div>
 
-  <!-- Ambient Mood Glow -->
-  <div id="ambient-glow"></div>
+      <!-- [EDITAR TEXTO] Mensagem ao final da viagem espacial -->
+      <h2 id="intro-title">A viagem terminou…</h2>
+      <p id="intro-text">Há uma última surpresa guardada</p>
+      <div class="tap-hint" id="intro-hint">Toque para ver</div>
 
-  <!-- Soft Vignette -->
-  <div class="vignette"></div>
-
-  <!-- Top Progress & Navigation Header -->
-  <header class="fixed top-0 left-0 right-0 z-30 flex flex-col">
-    <!-- Thin Progress Bar -->
-    <div class="w-full h-[3px] bg-white/5 overflow-hidden">
-      <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-400/70 via-indigo-300/80 to-rose-400/90 transition-all duration-700 ease-out" style="width: 5.88%;"></div>
     </div>
+  </div>
 
-    <!-- Navigation Controls & State Indicator -->
-    <div class="w-full max-w-4xl mx-auto px-5 pt-4 pb-2 flex items-center justify-between text-xs sm:text-sm tracking-wider text-slate-400/80">
-      <!-- Back Button -->
-      <button
-        id="prev-btn"
-        type="button"
-        aria-label="Voltar para a parte anterior"
-        class="opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-slate-300 backdrop-blur-md"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span>Voltar</span>
-      </button>
 
-      <!-- Dynamic Context Badge (Subtle thematic indicator) -->
-      <div id="theme-badge" class="font-mono text-[11px] uppercase tracking-widest text-slate-400/70 transition-all duration-500">
-        01 // Prólogo
-      </div>
+  <!-- ========================================================================
+       2. CONTEÚDO PRINCIPAL DO SITE 1 (NOSSO CÉU)
+       ======================================================================== -->
+  <canvas id="dust" aria-hidden="true"></canvas>
 
-      <!-- Slide Counter -->
-      <div id="slide-counter" class="font-mono text-xs text-slate-400/75 tabular-nums">
-        1 / 17
-      </div>
-    </div>
+  <header>
+    <div class="logo">✦ Nosso Céu</div>
+    <a href="#ceu">O céu de agora ↓</a>
   </header>
 
-  <!-- Main Interactive Stage (Clicking/tapping anywhere advances the story) -->
-  <main
-    id="interactive-stage"
-    role="button"
-    tabindex="0"
-    aria-label="Toque para avançar a mensagem"
-    class="relative z-20 w-full h-full flex flex-col items-center justify-center px-6 sm:px-12 md:px-20 cursor-pointer focus:outline-none"
-  >
-    <!-- Centered Message Container -->
-    <article class="w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center my-auto py-12">
-      <!-- Subtle decorative top icon/symbol that adapts to the theme -->
-      <div id="slide-ornament" class="mb-6 text-slate-400/60 transition-all duration-700 flex items-center justify-center h-8">
-        <!-- Injected dynamically -->
-      </div>
+  <main>
 
-      <!-- The Message Text -->
-      <div
-        id="message-container"
-        class="slide-content slide-visible w-full"
-      >
-        <p
-          id="message-text"
-          class="text-2xl sm:text-3xl md:text-4xl leading-relaxed sm:leading-relaxed md:leading-relaxed font-light text-slate-100 tracking-wide"
-        >
-          <!-- Populated by JS -->
+    <!-- ======================== SEÇÃO 1: INTRODUÇÃO ======================== -->
+    <section class="hero">
+      <div>
+        <!-- [EDITAR TEXTO] Subtítulo superior -->
+        <div class="kicker">Para Amanda, minha Princesa</div>
+
+        <!-- [EDITAR TEXTO] Título principal -->
+        <h1>O céu que marca<br><em>este momento.</em></h1>
+
+        <!-- [EDITAR TEXTO] Parágrafo de introdução -->
+        <p class="intro">
+          Amanda, dizem que o brilho das estrelas viaja anos-luz até chegar aqui. Mas, para mim, o fenômeno mais bonito do universo foi o instante em que os meus olhos capturaram a sua luz. A vida é curta demais para ser apequenada, e é por isso que fiz este pedaço de céu: para celebrar a grandeza do nosso agora e lembrar que qualquer instante ao seu lado merece ser eterno.
         </p>
       </div>
+    </section>
 
-      <!-- Live Interactive Sub-Caption (For Math/Physics/Code/Finale visual context) -->
-      <div
-        id="interactive-subcaption"
-        class="mt-8 min-h-[28px] font-mono text-xs sm:text-sm tracking-widest text-slate-400/75 transition-opacity duration-700 opacity-0"
-      >
-      </div>
-    </article>
-  </main>
 
-  <!-- Bottom Prompt / Replay Footer -->
-  <footer class="fixed bottom-0 left-0 right-0 z-30 pb-7 pt-4 px-6 flex flex-col items-center justify-center pointer-events-none">
-    <!-- Tap to continue prompt -->
-    <div id="tap-prompt" class="flex flex-col items-center gap-2.5 prompt-pulse transition-opacity duration-500">
-      <!-- Visual Touch Indicator (Highlighted on first slides) -->
-      <div id="touch-icon-wrapper" class="relative flex items-center justify-center w-8 h-8">
-        <span class="touch-indicator-ring absolute inset-0 rounded-full border border-sky-300/50"></span>
-        <span class="w-2.5 h-2.5 rounded-full bg-sky-200/80 shadow-[0_0_12px_rgba(186,230,253,0.9)]"></span>
+    <!-- ===================== SEÇÃO 2: MAPA DO CÉU ===================== -->
+    <section id="ceu">
+      <div class="sectionhead">
+        <!-- [EDITAR TEXTO] Cabeçalho da seção do mapa -->
+        <div class="kicker">Uma janela para o universo</div>
+        <h2>O céu de agora</h2>
+        <p>As estrelas têm sua própria história. A nossa também está sendo escrita, um instante bonito de cada vez.</p>
       </div>
-      <p id="tap-prompt-text" class="text-xs sm:text-sm uppercase tracking-[0.2em] text-slate-300/85 font-light text-center">
-        Toque em qualquer lugar na tela para continuar
-      </p>
+
+      <div class="panel">
+        <div class="mapmeta">
+          <span>✧ Carta celeste interativa</span>
+          <span id="date">Calculando o momento…</span>
+          <span id="status" class="status">Preparando o céu</span>
+        </div>
+
+        <div class="skybox">
+          <canvas id="sky" aria-label="Mapa interativo do céu estrelado"></canvas>
+        </div>
+
+        <p class="mapcaption" id="mapcaption">
+          Estrelas reais, linhas das constelações e posições planetárias calculadas para a data, hora e localização selecionadas. Arraste para explorar o céu.
+        </p>
+
+        <div class="controls">
+          <div>
+            <label for="lat">Latitude</label>
+            <input id="lat" type="number" step="0.0001" value="-1.2939">
+          </div>
+          <div>
+            <label for="lon">Longitude</label>
+            <input id="lon" type="number" step="0.0001" value="-47.9264">
+          </div>
+          <div>
+            <label for="when">Data e hora local</label>
+            <input id="when" type="datetime-local">
+          </div>
+        </div>
+
+        <div class="control-actions">
+          <button class="btn" id="apply">Atualizar o céu</button>
+          <button class="btn secondary" id="now">Voltar para agora</button>
+        </div>
+
+        <p class="hint">
+          Local inicial: Castanhal, Pará, Brasil. Ajuste latitude e longitude para o ponto de observação desejado. O mapa precisa de conexão com a internet para carregar o catálogo de estrelas e o motor astronômico externo.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- =================== SEÇÃO 3: LEMBRETES DO CORAÇÃO =================== -->
+    <section>
+      <div class="sectionhead">
+        <!-- [EDITAR TEXTO] Cabeçalho dos lembretes -->
+        <div class="kicker">Lembretes do coração</div>
+        <h2>Para minha Princesa</h2>
+      </div>
+
+      <div class="cards-carousel" aria-roledescription="carrossel">
+        <button class="carousel-arrow" id="prev-card" type="button" aria-label="Lembrete anterior">&#8592;</button>
+
+        <div class="cards-viewport" id="cards-viewport" aria-live="polite">
+
+          <!-- [EDITAR TEXTO] Card 1 -->
+          <article class="card active">
+            <div class="icon">☾</div>
+            <h3>Cada detalhe do seu céu</h3>
+            <p>
+              Assim como os grandes observadores, busco identificar e guardar cada constelação sua, porque é a união de todas elas que revela o universo lindo que você é. Há dias de céu limpo e fácil de contemplar, mas também há dias completamente nublados, como se as nuvens tentassem esconder você de mim. Mesmo assim, aos poucos, vou te conhecendo melhor — e quero continuar até acolher tudo o que é seu: tanto as partes luminosas quanto os cantos tristes e doloridos desse seu céu.
+            </p>
+          </article>
+
+          <!-- [EDITAR TEXTO] Card 2 -->
+          <article class="card">
+            <div class="icon">✧</div>
+            <h3>Quando o seu céu se abre</h3>
+            <p>
+              Toda espera vale a pena quando as nuvens se dissipam e você me deixa ver quem realmente é. Basta um gesto espontâneo ou uma risada sua para que qualquer noite fria ganhe calor. Os astrônomos passam a vida procurando grandes fenômenos no espaço, mas a minha maior descoberta sempre será a sorte de assistir de perto a beleza de cada detalhe seu.
+            </p>
+          </article>
+
+          <!-- [EDITAR TEXTO] Card 3 -->
+          <article class="card">
+            <div class="icon">♡</div>
+            <h3>Por inteiro, sem reservas</h3>
+            <p>
+              Depois de tanto procurar beleza nas alturas, descobri que o meu lugar favorito não fica em nenhuma galáxia distante — fica bem aqui na Terra, ao meu lado neste exato momento: em você, bb. Nenhuma estrela brilha igual todos os dias, e você não precisa ser forte ou perfeita o tempo todo perto de mim. Eu não me encantei por uma versão idealizada sua e meu carinho não é frágil: estou aqui para ouvir, acolher e amar você por inteiro, exatamente como você é.
+            </p>
+          </article>
+
+        </div>
+
+        <button class="carousel-arrow" id="next-card" type="button" aria-label="Próximo lembrete">&#8594;</button>
+      </div>
+
+      <div class="carousel-nav-bottom">
+        <div class="carousel-dots" id="carousel-dots" aria-label="Indicadores de lembretes">
+          <button class="carousel-dot active" type="button" data-index="0" aria-label="Ir para o lembrete 1"></button>
+          <button class="carousel-dot" type="button" data-index="1" aria-label="Ir para o lembrete 2"></button>
+          <button class="carousel-dot" type="button" data-index="2" aria-label="Ir para o lembrete 3"></button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ====================== SEÇÃO 4: CITAÇÃO FINAL ====================== -->
+    <div class="quote">
+      <!-- [EDITAR TEXTO] Frase final em destaque -->
+      <blockquote>
+        “Se eu pudesse pedir uma coisa ao universo, pediria mais tempo para viver todas as pequenas felicidades ao seu lado.”
+      </blockquote>
     </div>
 
-    <!-- Replay Button (Only shown on the final slide) -->
-    <button
-      id="replay-btn"
-      type="button"
-      class="hidden pointer-events-auto mt-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-rose-300/30 text-rose-100 text-xs sm:text-sm tracking-widest uppercase transition-all duration-500 backdrop-blur-md shadow-[0_0_25px_rgba(244,63,94,0.2)] items-center gap-2"
-    >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-      <span>Ler a mensagem novamente</span>
-    </button>
-  </footer>
+  </main>
 
+
+  <!-- ========================================================================
+       3. SCRIPTS (MOTOR ASTRONÔMICO + ANIMAÇÕES)
+       ======================================================================== -->
+  <script src="https://cdn.jsdelivr.net/gh/drakkB/skyengine@main/sky-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/drakkB/skyengine@main/sky-engine.js"></script>
+
+  <!-- Script 1: Animação da Viagem Espacial (Introdução) -->
   <script>
-    /**
-     * ============================================================================
-     * STORY SLIDES & VISUAL ATMOSPHERE DEFINITIONS
-     * ============================================================================
-     */
-    const slides = [
-      {
-        id: 0,
-        badge: "01 // Prólogo",
-        mode: "stardust_calm",
-        bgHex: [7, 9, 19],
-        glow: "radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.09) 0%, rgba(15, 23, 42, 0.03) 55%, transparent 75%)",
-        typography: "serif-hero",
-        html: `Oie, <span class="italic text-sky-200">meu bem</span>.`,
-        subcaption: "",
-        ornament: `<svg class="w-6 h-6 text-sky-300/70" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
-      },
-      {
-        id: 1,
-        badge: "02 // A Promessa",
-        mode: "stardust_calm",
-        bgHex: [8, 11, 22],
-        glow: "radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Em nosso último encontro falei que aquela seria a <span class="text-white font-medium">última surpresa</span>, e é verdade.`,
-        subcaption: "",
-        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-sky-300/60"></span>`
-      },
-      {
-        id: 2,
-        badge: "03 // Previsível?",
-        mode: "stardust_calm",
-        bgHex: [9, 12, 26],
-        glow: "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Em tão pouco tempo fiz tantos sites para demonstrar e falar o que sinto e penso que já deve ter se tornado previsível — algo que se espera que eu faça e que vá receber a notificação do link a qualquer momento.`,
-        subcaption: "",
-        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-indigo-300/60"></span>`
-      },
-      {
-        id: 3,
-        badge: "04 // Mais Que Um Site",
-        mode: "stardust_calm",
-        bgHex: [11, 13, 28],
-        glow: "radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.1) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Saiba que eu amo fazê-los porque sei que te faz muito feliz, e isso me deixa feliz.<br><br><span class="message-serif italic text-2xl sm:text-3xl md:text-4xl text-indigo-200">Não quero que entenda esse site como mais um semelhante aos outros, mas como uma mensagem.</span>`,
-        subcaption: "",
-        ornament: `<svg class="w-5 h-5 text-indigo-300/70" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>`
-      },
-      {
-        id: 4,
-        badge: "05 // Felicidade",
-        mode: "stardust_warm",
-        bgHex: [14, 12, 29],
-        glow: "radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.11) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Eu me sinto muito feliz de termos chegado até esse ponto, e tu facilmente consegue ver isso porque não me contenho <span class="text-purple-200/90 font-normal">kkkk</span>.`,
-        subcaption: "",
-        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-purple-300/60"></span>`
-      },
-      {
-        id: 5,
-        badge: "06 // Confiança",
-        mode: "stardust_warm",
-        bgHex: [19, 13, 33],
-        glow: "radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.1) 0%, rgba(147, 51, 234, 0.08) 45%, transparent 75%)",
-        typography: "serif-emotional",
-        html: `Conquistar a tua confiança ao ponto de contar sobre si mesma para mim cada vez mais, só me dá motivos para <span class="highlight-warm">te amar cada vez mais</span>.`,
-        subcaption: "",
-        ornament: `<svg class="w-5 h-5 text-amber-300/70" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>`
-      },
-      {
-        id: 6,
-        badge: "07 // O Motivo",
-        mode: "stardust_warm",
-        bgHex: [22, 14, 34],
-        glow: "radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.11) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Mas então, por que essa é a última surpresa? É a última pra sempre?<br><br><span class="message-serif italic text-3xl sm:text-4xl text-amber-200">Não é a última.</span>`,
-        subcaption: "",
-        ornament: `<span class="w-1.5 h-1.5 rounded-full bg-amber-300/70"></span>`
-      },
-      {
-        id: 7,
-        badge: "08 // Transbordando",
-        mode: "stardust_warm",
-        bgHex: [24, 15, 32],
-        glow: "radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.13) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Eu realmente não gostaria de te apressar, mas <span class="text-amber-100 font-medium">não consigo mais me conter</span>.`,
-        subcaption: "",
-        ornament: `<span class="w-2 h-2 rounded-full bg-amber-300/80 animate-ping"></span>`
-      },
-      {
-        id: 8,
-        badge: "09 // Contar Para O Mundo",
-        mode: "echo_voices",
-        bgHex: [14, 24, 26],
-        glow: "radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.13) 0%, rgba(251, 191, 36, 0.09) 45%, transparent 75%)",
-        typography: "sans-clean",
-        html: `Gostaria de falar sobre nós para todos: para meus pais, minhas tias e tios, meus primos e primas, para meu avô e avó e até para os animais que eles criam.<br><br><span class="text-emerald-200">Adoraria ouvir os papagaios repetindo teu nome de tanto que falei pra eles sobre tu.</span>`,
-        subcaption: "((( som da tua presença ecoando em cada conversa )))",
-        ornament: `<svg class="w-6 h-6 text-emerald-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>`
-      },
-      {
-        id: 9,
-        badge: "10 // Vertigem",
-        mode: "vortex_mind",
-        bgHex: [19, 13, 30],
-        glow: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.14) 0%, rgba(139, 92, 246, 0.1) 50%, transparent 75%)",
-        typography: "sans-clean",
-        html: `Eu gostaria que nossa relação não fosse algo escondido e que pudéssemos ficar juntos mesmo em público.<br><br>Pensar que não posso fazer tudo isso é algo que se torna quase insustentável para a minha cabeça. <span class="text-rose-200 font-medium">Minha mente fica uma loucura...</span>`,
-        subcaption: "⟳ pensamentos acelerando em espiral",
-        ornament: `<svg class="w-6 h-6 text-rose-300/80 animate-spin" style="animation-duration: 6s;" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`
-      },
-      {
-        id: 10,
-        badge: "11 // Singularidade Física",
-        mode: "dirac_delta",
-        bgHex: [5, 16, 28],
-        glow: "radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.18) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 75%)",
-        typography: "serif-emotional",
-        html: `Se ela fosse uma função, explodiria que nem uma <span class="highlight-physics">Delta de Dirac</span> que não se pode calcular...`,
-        subcaption: "δ(x - x₀) → ∞   |   ∫₋∞⁺∞ δ(x) dx = 1",
-        ornament: `<span class="font-mono text-sm text-cyan-300/90 border border-cyan-400/30 px-2.5 py-0.5 rounded-full bg-cyan-950/40">δ(x) = ∞</span>`
-      },
-      {
-        id: 11,
-        badge: "12 // Erro de Sistema & Loop Infinito",
-        mode: "code_glitch",
-        bgHex: [18, 8, 14],
-        glow: "radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.16) 0%, rgba(245, 158, 11, 0.08) 50%, transparent 75%)",
-        typography: "code-hybrid",
-        html: `...como um <span class="highlight-code">;</span> faltando em uma linha de código, causando erro em todo o programa.<br><br>Os pensamentos não param, como um <span class="highlight-code">loop infinito</span> que processa mais de um milhão de informações por segundo, travando todo o sistema.`,
-        subcaption: "while (pensando_em_tu) { amor++; } // 1.000.000+ ops/s",
-        ornament: `<span class="font-mono text-xs text-red-300/90 border border-red-400/40 px-2.5 py-0.5 rounded bg-red-950/50">SyntaxError: missing ';'</span>`
-      },
-      {
-        id: 12,
-        badge: "13 // Hiperespaço & Álgebra",
-        mode: "hyper_matrix",
-        bgHex: [12, 10, 28],
-        glow: "radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.16) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 75%)",
-        typography: "serif-emotional",
-        html: `É como o <span class="highlight-math">determinante de uma matriz não quadrada</span>.<br><br>Como um <span class="highlight-math">sistema com infinitas dimensões</span>.`,
-        subcaption: "det(Aₘₓₙ) = indefinido (m ≠ n)   |   dim(V) → ∞",
-        ornament: `<span class="font-mono text-xs text-violet-300/90 border border-violet-400/30 px-2.5 py-0.5 rounded-full bg-violet-950/40">ℝ^∞</span>`
-      },
-      {
-        id: 13,
-        badge: "14 // Vazio Cósmico",
-        mode: "dark_galaxy",
-        bgHex: [2, 2, 5],
-        glow: "radial-gradient(circle at 50% 50%, rgba(148, 163, 184, 0.05) 0%, transparent 65%)",
-        typography: "serif-emotional",
-        html: `Como uma <span class="highlight-void italic">galáxia sem estrelas</span>...<br><br>É exatamente esse <span class="destaque-vazio">o vazio que sinto só de imaginar te perder</span>, <span class="destaque-amor">justamente porque te amo demais</span>.`,
-        subcaption: "[ todas as estrelas se apagam sem você ]",
-        ornament: `<span class="w-2 h-2 rounded-full border border-slate-500/60"></span>`
-      },
-      {
-        id: 14,
-        badge: "15 // Meu Pedido",
-        mode: "stars_reborn",
-        bgHex: [10, 14, 29],
-        glow: "radial-gradient(circle at 50% 50%, rgba(125, 211, 252, 0.13) 0%, rgba(192, 132, 252, 0.08) 50%, transparent 75%)",
-        typography: "sans-clean",
-        html: `Sou muito paciente, mas não tão resistente pra conseguir guardar tudo pra mim.<br><br>Por isso estou pedindo, <span class="text-sky-200 font-medium">com carinho</span>, que me dê a sua resposta — e, quem sabe, em uma surpresa ou em um momento planejado por você.`,
-        subcaption: "✦ as estrelas voltam a brilhar no seu tempo ✦",
-        ornament: `<svg class="w-5 h-5 text-sky-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>`
-      },
-      {
-        id: 15,
-        badge: "16 // Sem Pressa",
-        mode: "stars_reborn",
-        bgHex: [14, 13, 30],
-        glow: "radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.12) 0%, transparent 70%)",
-        typography: "sans-clean",
-        html: `Não precisa responder à mensagem no momento em que receber; ela já estava programada para ser enviada em algum horário e dia.<br><br><span class="text-violet-200/95">Se eu disser que estava tudo planejado, será que acreditaria? kkkkk</span>`,
-        subcaption: "",
-        ornament: `<svg class="w-5 h-5 text-violet-300/80" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
-      },
-      {
-        id: 16,
-        badge: "17 // Para Sempre",
-        mode: "finale_love",
-        bgHex: [20, 10, 26],
-        glow: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.20) 0%, rgba(168, 85, 247, 0.12) 45%, transparent 75%)",
-        typography: "serif-finale",
-        html: `Era isso que tinha pra dizer.<br><br><span class="highlight-love text-4xl sm:text-5xl md:text-6xl font-semibold italic block mt-4">Te amo, minha princesa.</span>`,
-        subcaption: "♥",
-        ornament: `<svg class="w-7 h-7 text-rose-400 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`
-      }
-    ];
+    (() => {
+      const overlay = document.getElementById('intro-overlay');
+      const canvas = document.getElementById('intro-sky');
+      const ctx = canvas.getContext('2d', { alpha: true });
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /**
-     * ============================================================================
-     * STATE MANAGEMENT & DOM ELEMENTS
-     * ============================================================================
-     */
-    let currentIndex = 0;
-    let isTransitioning = false;
+      let width = 0, height = 0, dpr = 1, stars = [], nebulaTexture = null;
+      let startTime = performance.now(), previousTime = startTime;
+      let waitingForContinue = false, introFinished = false;
 
-    const stageEl = document.getElementById('interactive-stage');
-    const messageContainer = document.getElementById('message-container');
-    const messageText = document.getElementById('message-text');
-    const subcaptionEl = document.getElementById('interactive-subcaption');
-    const ornamentEl = document.getElementById('slide-ornament');
-    const progressBar = document.getElementById('progress-bar');
-    const slideCounter = document.getElementById('slide-counter');
-    const themeBadge = document.getElementById('theme-badge');
-    const prevBtn = document.getElementById('prev-btn');
-    const tapPrompt = document.getElementById('tap-prompt');
-    const tapPromptText = document.getElementById('tap-prompt-text');
-    const touchIconWrapper = document.getElementById('touch-icon-wrapper');
-    const replayBtn = document.getElementById('replay-btn');
-    const ambientGlow = document.getElementById('ambient-glow');
+      const accelFor = 3200;
+      const cruiseEnd = 8500;
+      const messageAt = 11200;
 
-    /**
-     * ============================================================================
-     * CANVAS ENGINE: PARTICLES, PHYSICS, CODE, MATRICES & COSMOS
-     * ============================================================================
-     */
-    const canvas = document.getElementById('cosmos-canvas');
-    const ctx = canvas.getContext('2d');
+      const rand = (min, max) => min + Math.random() * (max - min);
+      const clamp = (v, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+      const smooth = (a, b, t) => { const p = clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
+      const envelope = (t, a, b, c, d) => smooth(a, b, t) * (1 - smooth(c, d, t));
+      const easeIn = t => t * t;
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-    // Smoothly interpolated background RGB
-    let currentBg = [7, 9, 19];
-    let targetBg = [7, 9, 19];
-
-    // Current visual mode
-    let activeMode = "stardust_calm";
-    let modeTime = 0;
-
-    // Interactive click ripples
-    const tapRipples = [];
-
-    // Soundwave echo rings (for Slide 8)
-    const echoWaves = [];
-
-    // Particles pool
-    const PARTICLE_COUNT = 110;
-    const particles = [];
-
-    // Floating code/math fragments for slides 10, 11, 12
-    const floatingFragments = [
-      { text: "δ(x - x₀) = ∞", x: 0.15, y: 0.22, speed: 0.0003, type: "dirac" },
-      { text: "∫₋∞⁺∞ δ(x)dx = 1", x: 0.78, y: 0.28, speed: 0.00025, type: "dirac" },
-      { text: "lim ε→0⁺ (1/√πϵ)·e^(-x²/ϵ²)", x: 0.18, y: 0.78, speed: 0.0002, type: "dirac" },
-      { text: "f(x₀) = ∫ f(x)δ(x - x₀)dx", x: 0.72, y: 0.74, speed: 0.00035, type: "dirac" },
-
-      { text: "SyntaxError: missing ';' at line 143", x: 0.12, y: 0.20, speed: 0.0012, type: "code" },
-      { text: "while (pensando_em_tu) { amor++; }", x: 0.65, y: 0.24, speed: 0.0015, type: "code" },
-      { text: "CPU_LOAD: 1,048,576 ops/sec [OVERFLOW]", x: 0.14, y: 0.77, speed: 0.0014, type: "code" },
-      { text: "FATAL: stack_overflow_exception // mente_travada", x: 0.58, y: 0.82, speed: 0.0011, type: "code" },
-      { text: "if (!com_voce) throw new Error('Insustentável');", x: 0.25, y: 0.14, speed: 0.0013, type: "code" },
-
-      { text: "det(Aₘₓₙ) = undefined (m ≠ n)", x: 0.14, y: 0.24, speed: 0.0004, type: "matrix" },
-      { text: "dim(V) → ∞", x: 0.78, y: 0.22, speed: 0.0003, type: "matrix" },
-      { text: "⌈ a₁₁  a₁₂  a₁₃ ⌉", x: 0.16, y: 0.74, speed: 0.00035, type: "matrix" },
-      { text: "⌊ a₂₁  a₂₂  a₂₃ ⌋  (2×3)", x: 0.16, y: 0.78, speed: 0.00035, type: "matrix" },
-      { text: "∑ cᵢvᵢ ∈ ℝ^∞", x: 0.74, y: 0.76, speed: 0.0004, type: "matrix" }
-    ];
-
-    // Shooting stars for Finale
-    const shootingStars = [];
-
-    function resizeCanvas() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // Initialize particles
-    function initParticles() {
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          radius: Math.random() * 1.9 + 0.5,
-          baseAlpha: Math.random() * 0.65 + 0.2,
-          alpha: Math.random() * 0.65 + 0.2,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: -Math.random() * 0.4 - 0.1,
-          angle: Math.random() * Math.PI * 2,
-          orbitRadius: Math.random() * Math.min(width, height) * 0.42 + 30,
-          orbitSpeed: (Math.random() * 0.015 + 0.006) * (Math.random() < 0.5 ? 1 : -1),
-          twinkleSpeed: Math.random() * 0.03 + 0.01,
-          twinklePhase: Math.random() * Math.PI * 2,
-          hue: 210
-        });
-      }
-    }
-    initParticles();
-
-    // Add a tap ripple at (x, y)
-    function createTapRipple(x, y) {
-      tapRipples.push({
-        x,
-        y,
-        radius: 4,
-        maxRadius: 110,
-        alpha: 0.45
-      });
-    }
-
-    // 4D Hypercube (Tesseract) vertices for Slide 12
-    const tesseractVertices = [];
-    for (let i = 0; i < 16; i++) {
-      tesseractVertices.push([
-        (i & 1) ? 1 : -1,
-        (i & 2) ? 1 : -1,
-        (i & 4) ? 1 : -1,
-        (i & 8) ? 1 : -1
-      ]);
-    }
-    const tesseractEdges = [];
-    for (let i = 0; i < 16; i++) {
-      for (let j = i + 1; j < 16; j++) {
-        let diff = i ^ j;
-        if (diff && !(diff & (diff - 1))) {
-          tesseractEdges.push([i, j]);
-        }
-      }
-    }
-
-    /**
-     * Draw Slide 10: Dirac Delta Function δ(x)
-     */
-    function drawDiracDelta(time) {
-      const cx = width / 2;
-      const cy = height * 0.62;
-      const axisWidth = Math.min(width * 0.78, 680);
-
-      ctx.save();
-      // Coordinate axes
-      ctx.strokeStyle = "rgba(103, 232, 249, 0.18)";
-      ctx.lineWidth = 1;
-
-      // X-axis
-      ctx.beginPath();
-      ctx.moveTo(cx - axisWidth / 2, cy);
-      ctx.lineTo(cx + axisWidth / 2, cy);
-      ctx.stroke();
-
-      // Y-axis
-      ctx.beginPath();
-      ctx.moveTo(cx, cy + 50);
-      ctx.lineTo(cx, height * 0.12);
-      ctx.stroke();
-
-      // Animated Gaussian spike approaching Dirac Delta
-      const pulse = 0.5 + 0.5 * Math.sin(time * 2.4);
-      const epsilon = 14 + pulse * 18; // narrow width
-      const peakHeight = Math.min(height * 0.48, 360) + (1 - pulse) * 70;
-
-      ctx.beginPath();
-      for (let px = -axisWidth / 2; px <= axisWidth / 2; px += 3) {
-        const xScreen = cx + px;
-        const yOffset = peakHeight * Math.exp(-(px * px) / (2 * epsilon * epsilon));
-        const ripple = Math.sin(px * 0.08 - time * 4) * 3 * Math.exp(-Math.abs(px) * 0.015);
-        const yScreen = cy - yOffset + ripple;
-        if (px === -axisWidth / 2) {
-          ctx.moveTo(xScreen, yScreen);
-        } else {
-          ctx.lineTo(xScreen, yScreen);
-        }
-      }
-
-      ctx.strokeStyle = "rgba(34, 211, 238, 0.55)";
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = "rgba(34, 211, 238, 0.8)";
-      ctx.shadowBlur = 16;
-      ctx.stroke();
-
-      // Glowing vertical singularity beam at x = 0
-      const grad = ctx.createLinearGradient(cx, cy, cx, height * 0.1);
-      grad.addColorStop(0, "rgba(34, 211, 238, 0.45)");
-      grad.addColorStop(0.7, "rgba(165, 243, 252, 0.75)");
-      grad.addColorStop(1, "rgba(34, 211, 238, 0)");
-
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx, height * 0.1);
-      ctx.stroke();
-
-      ctx.restore();
-
-      // Draw floating Dirac equations
-      drawFloatingTexts("dirac", "rgba(103, 232, 249, 0.25)");
-    }
-
-    /**
-     * Draw Slide 11: Code Glitch & Infinite Loop
-     */
-    function drawCodeGlitch(time) {
-      ctx.save();
-
-      // Subtle horizontal scanlines / glitch bars
-      if (Math.random() < 0.28) {
-        const barY = Math.random() * height;
-        const barH = Math.random() * 16 + 2;
-        ctx.fillStyle = Math.random() < 0.5
-          ? "rgba(239, 68, 68, 0.06)"
-          : "rgba(251, 191, 36, 0.05)";
-        ctx.fillRect(0, barY, width, barH);
-      }
-
-      // Live rapidly incrementing operation counter in background
-      const opsCount = Math.floor(1000000 + ((time * 843219) % 8999999)).toLocaleString('pt-BR');
-      ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(248, 113, 113, 0.22)";
-      ctx.textAlign = "center";
-      ctx.fillText(`PROCESS_LOOP_COUNT: ${opsCount} ops/sec`, width / 2, height * 0.17);
-
-      ctx.restore();
-
-      drawFloatingTexts("code", "rgba(252, 165, 165, 0.22)");
-    }
-
-    /**
-     * Draw Slide 12: 4D Rotating Hypercube & Non-Square Matrix
-     */
-    function drawHyperMatrix(time) {
-      const cx = width / 2;
-      const cy = height / 2;
-      const scale = Math.min(width, height) * 0.17;
-
-      const angleXW = time * 0.55;
-      const angleYW = time * 0.38;
-      const angleXY = time * 0.25;
-
-      const projected = tesseractVertices.map(v => {
-        let [x, y, z, w] = v;
-
-        // Rotate XW
-        let x1 = x * Math.cos(angleXW) - w * Math.sin(angleXW);
-        let w1 = x * Math.sin(angleXW) + w * Math.cos(angleXW);
-        x = x1; w = w1;
-
-        // Rotate YW
-        let y1 = y * Math.cos(angleYW) - w * Math.sin(angleYW);
-        let w2 = y * Math.sin(angleYW) + w * Math.cos(angleYW);
-        y = y1; w = w2;
-
-        // Rotate XY
-        let x2 = x * Math.cos(angleXY) - y * Math.sin(angleXY);
-        let y2 = x * Math.sin(angleXY) + y * Math.cos(angleXY);
-        x = x2; y = y2;
-
-        // 4D to 3D perspective
-        const distance4D = 2.6;
-        const wFactor = 1 / (distance4D - w);
-        const x3 = x * wFactor;
-        const y3 = y * wFactor;
-        const z3 = z * wFactor;
-
-        // 3D to 2D perspective
-        const distance3D = 2.8;
-        const zFactor = 1 / (distance3D - z3);
-
+      function newStar(initial = false) {
         return {
-          px: cx + x3 * zFactor * scale * 2.2,
-          py: cy + y3 * zFactor * scale * 2.2
+          x: rand(-1.48, 1.48), y: rand(-1.48, 1.48),
+          z: initial ? rand(.45, 4.3) : rand(3.3, 4.5),
+          size: rand(.4, 1.7), alpha: rand(.26, .95),
+          hue: Math.random() < .57 ? rand(252, 302) : rand(315, 355),
+          twinkle: rand(0, Math.PI * 2), px: null, py: null, dust: Math.random() < .38
         };
+      }
+
+      function radialCloud(g, x, y, rx, ry, colors, rotation = 0) {
+        g.save(); g.translate(x, y); g.rotate(rotation); g.scale(rx, ry);
+        const grad = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+        for (const [stop, color] of colors) grad.addColorStop(stop, color);
+        g.fillStyle = grad; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+
+      function makeNebula() {
+        nebulaTexture = document.createElement('canvas');
+        nebulaTexture.width = Math.max(1, Math.round(width * dpr));
+        nebulaTexture.height = Math.max(1, Math.round(height * dpr));
+        const g = nebulaTexture.getContext('2d');
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.clearRect(0, 0, width, height);
+        g.globalCompositeOperation = 'screen';
+        const w = width, h = height;
+        radialCloud(g, w*.28, h*.43, w*.45, h*.24, [[0,'rgba(141,49,211,.43)'],[.35,'rgba(115,34,190,.22)'],[1,'rgba(78,22,141,0)']], -.32);
+        radialCloud(g, w*.48, h*.53, w*.40, h*.19, [[0,'rgba(224,74,174,.35)'],[.38,'rgba(172,51,181,.18)'],[1,'rgba(94,25,151,0)']], .18);
+        radialCloud(g, w*.74, h*.42, w*.30, h*.23, [[0,'rgba(54,135,221,.32)'],[.4,'rgba(47,79,191,.18)'],[1,'rgba(30,46,119,0)']], -.45);
+        radialCloud(g, w*.66, h*.67, w*.36, h*.18, [[0,'rgba(224,90,111,.25)'],[.42,'rgba(133,49,169,.17)'],[1,'rgba(90,31,145,0)']], .25);
+        radialCloud(g, w*.30, h*.72, w*.28, h*.14, [[0,'rgba(69,76,208,.22)'],[.48,'rgba(72,52,163,.14)'],[1,'rgba(50,35,126,0)']], -.12);
+
+        g.save(); g.lineCap = 'round'; g.globalCompositeOperation = 'screen';
+        for (let i = 0; i < 23; i++) {
+          const x = rand(-.1*w, .75*w), y = rand(.18*h, .83*h);
+          const span = rand(.12*w, .42*w), bend = rand(-.13*h, .13*h);
+          const grad = g.createLinearGradient(x, y, x + span, y + bend);
+          const hue = [270, 292, 315, 205][i % 4];
+          grad.addColorStop(0, `hsla(${hue}, 94%, 69%, 0)`);
+          grad.addColorStop(.48, `hsla(${hue}, 94%, 72%, ${rand(.035,.10)})`);
+          grad.addColorStop(1, `hsla(${hue}, 94%, 68%, 0)`);
+          g.strokeStyle = grad; g.lineWidth = rand(2, 8); g.shadowBlur = rand(5, 19); g.shadowColor = `hsla(${hue},90%,68%,.24)`;
+          g.beginPath(); g.moveTo(x, y);
+          g.bezierCurveTo(x + span*.22, y + bend*1.35, x + span*.62, y - bend*.8, x + span, y + bend);
+          g.stroke();
+        }
+        g.restore(); g.globalCompositeOperation = 'source-over';
+      }
+
+      function resizeIntro() {
+        if (introFinished) return;
+        dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+        width = window.innerWidth; height = window.innerHeight;
+        canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
+        canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const count = Math.max(190, Math.min(470, Math.floor(width * height / 2550)));
+        stars = Array.from({ length: count }, () => newStar(true));
+        makeNebula();
+      }
+
+      function projection(star) {
+        const focal = Math.min(width, height) * .52;
+        return { x: width/2 + star.x*focal/star.z, y: height/2 + star.y*focal/star.z, scale: focal/star.z };
+      }
+
+      function cameraDistance(t) {
+        const sec = Math.max(0, t / 1000);
+        const accelDistance = .045 * 3.2 + 1.68 * 3.2 / 3;
+        const cruiseDistance = accelDistance + 1.73 * (8.5 - 3.2);
+        if (sec <= 3.2) return .045 * sec + 1.68 * Math.pow(sec, 3) / (3 * 3.2 * 3.2);
+        if (sec <= 8.5) return accelDistance + 1.73 * (sec - 3.2);
+        if (sec <= 11.2) {
+          const q = (sec - 8.5) / 2.7;
+          return cruiseDistance + 1.73 * 2.7 * (q - q*q*q + .5*q*q*q*q);
+        }
+        return cruiseDistance + 1.73 * 2.7 * .5;
+      }
+
+      function projectWorldObject(x, y, depth, physicalRadius, t) {
+        const focal = Math.min(width, height) * .52;
+        const z = Math.max(.45, depth - cameraDistance(t));
+        return {
+          x: width/2 + x * focal / z,
+          y: height/2 + y * focal / z,
+          r: physicalRadius * focal / z,
+          z
+        };
+      }
+
+      function drawNebula(t) {
+        const alpha = envelope(t, 1700, 3200, 9300, 11100) * .92;
+        if (alpha <= .005 || !nebulaTexture) return;
+        const zoom = 1 + cameraDistance(t) * .032;
+        const drawW = width * zoom, drawH = height * zoom;
+        ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = 'screen';
+        ctx.drawImage(nebulaTexture, (width-drawW)/2, (height-drawH)/2, drawW, drawH);
+        const flash = Math.pow(Math.max(0, Math.sin((t-2500)*.00078)), 8) * envelope(t, 2200, 2800, 8700, 10200);
+        if (flash > .01) {
+          const grad = ctx.createRadialGradient(width*.52, height*.48, 0, width*.52, height*.48, Math.min(width,height)*.62);
+          grad.addColorStop(0, `rgba(186,145,255,${flash*.13})`); grad.addColorStop(1, 'rgba(90,55,175,0)');
+          ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
+        }
+        ctx.restore();
+      }
+
+      function drawSaturn(x, y, r, alpha) {
+        if (alpha <= .005) return;
+        ctx.save(); ctx.globalAlpha = alpha;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(-.22);
+        let ring = ctx.createLinearGradient(-r*1.8, 0, r*1.8, 0);
+        ring.addColorStop(0, 'rgba(89,70,137,.12)'); ring.addColorStop(.2, 'rgba(226,191,224,.76)');
+        ring.addColorStop(.5, 'rgba(255,222,201,.88)'); ring.addColorStop(.78, 'rgba(158,113,185,.78)'); ring.addColorStop(1, 'rgba(60,47,107,.08)');
+        ctx.strokeStyle = ring; ctx.lineWidth = r*.25; ctx.beginPath(); ctx.ellipse(0,0,r*1.62,r*.49,0,Math.PI,Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,225,238,.30)'; ctx.lineWidth = r*.035; ctx.beginPath(); ctx.ellipse(0,0,r*1.78,r*.54,0,Math.PI,Math.PI*2); ctx.stroke();
+        ctx.restore();
+
+        const sphere = ctx.createRadialGradient(x-r*.35,y-r*.4,r*.04,x,y,r*1.12);
+        sphere.addColorStop(0,'#fff0d5'); sphere.addColorStop(.18,'#e8c4ce'); sphere.addColorStop(.42,'#ba8cbf'); sphere.addColorStop(.72,'#76539e'); sphere.addColorStop(1,'#20122f');
+        ctx.fillStyle = sphere; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+        ctx.save(); ctx.beginPath(); ctx.arc(x,y,r*.995,0,Math.PI*2); ctx.clip();
+        for (let i=0;i<7;i++) {
+          const yy = y-r*.72+i*r*.22;
+          ctx.strokeStyle = i%2 ? 'rgba(255,224,215,.18)' : 'rgba(90,49,126,.20)';
+          ctx.lineWidth = r*.085; ctx.beginPath(); ctx.moveTo(x-r,yy); ctx.bezierCurveTo(x-r*.32,yy-r*.08,x+r*.22,yy+r*.08,x+r,yy-r*.02); ctx.stroke();
+        }
+        const shade=ctx.createRadialGradient(x-r*.1,y-r*.15,r*.3,x+r*.5,y+r*.16,r*1.25);
+        shade.addColorStop(0,'rgba(10,6,27,0)'); shade.addColorStop(.56,'rgba(14,7,31,.28)'); shade.addColorStop(1,'rgba(3,2,10,.9)');
+        ctx.fillStyle=shade; ctx.fillRect(x-r,y-r,2*r,2*r); ctx.restore();
+        ctx.strokeStyle='rgba(245,215,255,.36)'; ctx.lineWidth=Math.max(.8,r*.012); ctx.beginPath(); ctx.arc(x,y,r*.99,-2.25,-.55); ctx.stroke();
+
+        ctx.save(); ctx.translate(x,y); ctx.rotate(-.22);
+        ring = ctx.createLinearGradient(-r*1.7,0,r*1.7,0);
+        ring.addColorStop(0,'rgba(95,74,140,.18)'); ring.addColorStop(.18,'rgba(220,177,219,.78)');
+        ring.addColorStop(.48,'rgba(255,232,207,.96)'); ring.addColorStop(.76,'rgba(185,133,196,.82)'); ring.addColorStop(1,'rgba(73,54,118,.10)');
+        ctx.strokeStyle=ring; ctx.lineWidth=r*.20; ctx.beginPath(); ctx.ellipse(0,0,r*1.62,r*.49,0,0,Math.PI); ctx.stroke();
+        ctx.strokeStyle='rgba(255,242,233,.46)'; ctx.lineWidth=r*.018; ctx.beginPath(); ctx.ellipse(0,0,r*1.75,r*.53,0,0,Math.PI); ctx.stroke();
+        ctx.restore(); ctx.restore();
+      }
+
+      function drawEarth(x, y, r, alpha) {
+        if (alpha <= .005) return;
+        ctx.save(); ctx.globalAlpha=alpha;
+        const glow=ctx.createRadialGradient(x,y,r*.7,x,y,r*1.8);
+        glow.addColorStop(0,'rgba(82,151,255,.20)'); glow.addColorStop(1,'rgba(55,98,220,0)');
+        ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(x,y,r*1.8,0,Math.PI*2); ctx.fill();
+        const ocean=ctx.createRadialGradient(x-r*.32,y-r*.42,r*.04,x,y,r*1.12);
+        ocean.addColorStop(0,'#b0e9ff'); ocean.addColorStop(.16,'#4fabe8'); ocean.addColorStop(.58,'#2369c5'); ocean.addColorStop(.86,'#102658'); ocean.addColorStop(1,'#040714');
+        ctx.fillStyle=ocean; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+        ctx.save(); ctx.beginPath(); ctx.arc(x,y,r*.99,0,Math.PI*2); ctx.clip();
+        ctx.fillStyle='rgba(90,190,125,.84)';
+        ctx.beginPath(); ctx.moveTo(x-r*.62,y-r*.36); ctx.bezierCurveTo(x-r*.32,y-r*.63,x-r*.06,y-r*.38,x-r*.14,y-r*.12); ctx.bezierCurveTo(x-r*.3,y+r*.02,x-r*.08,y+r*.18,x-r*.26,y+r*.42); ctx.lineTo(x-r*.47,y+r*.34); ctx.lineTo(x-r*.64,y); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x+r*.08,y-r*.68); ctx.bezierCurveTo(x+r*.52,y-r*.60,x+r*.62,y-r*.28,x+r*.43,y-r*.08); ctx.bezierCurveTo(x+r*.29,y+r*.12,x+r*.55,y+r*.20,x+r*.35,y+r*.43); ctx.lineTo(x+r*.13,y+r*.52); ctx.lineTo(x+r*.02,y+r*.17); ctx.lineTo(x+r*.18,y-r*.08); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle='rgba(231,249,255,.52)'; ctx.lineWidth=r*.055;
+        for (let i=0;i<4;i++) { ctx.beginPath(); ctx.ellipse(x+Math.sin(i*2.4)*r*.18,y-r*.45+i*r*.27,r*.74,r*.10,-.28,Math.PI*1.05,Math.PI*1.85); ctx.stroke(); }
+        const shade=ctx.createLinearGradient(x-r,y-r*.2,x+r,y+r*.15); shade.addColorStop(0,'rgba(0,0,0,0)'); shade.addColorStop(.5,'rgba(0,0,0,.06)'); shade.addColorStop(1,'rgba(0,0,18,.88)');
+        ctx.fillStyle=shade; ctx.fillRect(x-r,y-r,2*r,2*r); ctx.restore();
+        ctx.strokeStyle='rgba(135,210,255,.48)'; ctx.lineWidth=Math.max(.7,r*.018); ctx.beginPath(); ctx.arc(x,y,r*1.015,-2.5,-.45); ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBlackHole(x, y, r, alpha, spin = 0) {
+        if (alpha <= .005) return;
+        ctx.save(); ctx.globalAlpha=alpha;
+        const halo=ctx.createRadialGradient(x,y,r*.35,x,y,r*2.7);
+        halo.addColorStop(0,'rgba(8,5,22,.02)'); halo.addColorStop(.42,'rgba(99,51,202,.13)');
+        halo.addColorStop(.62,'rgba(236,88,178,.13)'); halo.addColorStop(.78,'rgba(255,151,91,.055)'); halo.addColorStop(1,'rgba(72,48,145,0)');
+        ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,r*2.7,0,Math.PI*2); ctx.fill();
+        ctx.save(); ctx.translate(x,y); ctx.rotate(-.17 + spin);
+        ctx.globalCompositeOperation='screen';
+        const disk=ctx.createLinearGradient(-r*2.5,-r*.2,r*2.5,r*.2);
+        disk.addColorStop(0,'rgba(112,87,255,0)'); disk.addColorStop(.17,'rgba(144,108,255,.72)');
+        disk.addColorStop(.37,'rgba(255,136,196,.94)'); disk.addColorStop(.5,'rgba(255,231,198,1)');
+        disk.addColorStop(.67,'rgba(255,119,101,.83)'); disk.addColorStop(.86,'rgba(168,91,255,.56)'); disk.addColorStop(1,'rgba(85,79,228,0)');
+        for (const layer of [{w:.52,a:.14,blur:20},{w:.24,a:.28,blur:10},{w:.075,a:.8,blur:4}]) {
+          ctx.globalAlpha=alpha*layer.a; ctx.shadowBlur=r*layer.blur*.08; ctx.shadowColor='#ee8bff'; ctx.strokeStyle=disk; ctx.lineWidth=r*layer.w;
+          ctx.beginPath(); ctx.ellipse(0,0,r*2.17,r*.57,0,0,Math.PI*2); ctx.stroke();
+        }
+        ctx.globalAlpha=alpha; ctx.shadowBlur=0;
+        ctx.strokeStyle='rgba(255,220,219,.72)'; ctx.lineWidth=Math.max(1,r*.025); ctx.beginPath(); ctx.ellipse(0,0,r*1.78,r*.37,0,Math.PI,Math.PI*2); ctx.stroke();
+        ctx.restore();
+        const hole=ctx.createRadialGradient(x-r*.18,y-r*.25,r*.03,x,y,r*1.02);
+        hole.addColorStop(0,'#000'); hole.addColorStop(.70,'#010107'); hole.addColorStop(.91,'#05030d'); hole.addColorStop(1,'rgba(15,8,32,.24)');
+        ctx.fillStyle=hole; ctx.beginPath(); ctx.arc(x,y,r*.86,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(255,195,217,.47)'; ctx.lineWidth=Math.max(1,r*.022); ctx.shadowBlur=r*.18; ctx.shadowColor='#f3a2ff';
+        ctx.beginPath(); ctx.arc(x,y,r*.88,-Math.PI*.91,Math.PI*.78); ctx.stroke(); ctx.shadowBlur=0;
+        ctx.globalAlpha=alpha*.48; ctx.strokeStyle='rgba(163,128,255,.52)'; ctx.lineWidth=Math.max(.7,r*.012);
+        ctx.beginPath(); ctx.ellipse(x,y-r*.13,r*1.14,r*.68,-.02,Math.PI*1.08,Math.PI*1.92); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(x,y+r*.13,r*1.18,r*.66,.02,.12,Math.PI*.86); ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawComet(t) {
+        const a=envelope(t,5700,6200,7900,8500);
+        if(a<=.005) return;
+        const focal=Math.min(width,height)*.52;
+        const depth=10.25;
+        const z=Math.max(.45,depth-cameraDistance(t));
+        const wx=-.65, wy=-.25;
+        const headX=width/2+wx*focal/z, headY=height/2+wy*focal/z;
+        const tailZ=z+2.2;
+        const tailX=width/2+wx*focal/tailZ, tailY=height/2+wy*focal/tailZ;
+        ctx.save(); ctx.globalAlpha=a*.84;
+        const grad=ctx.createLinearGradient(tailX,tailY,headX,headY);
+        grad.addColorStop(0,'rgba(119,109,255,0)'); grad.addColorStop(.55,'rgba(174,157,255,.30)'); grad.addColorStop(1,'rgba(255,250,255,.98)');
+        ctx.strokeStyle=grad; ctx.lineWidth=Math.max(1,Math.min(5,focal*.011/z)); ctx.shadowBlur=12; ctx.shadowColor='#bba1ff';
+        ctx.beginPath(); ctx.moveTo(tailX,tailY); ctx.lineTo(headX,headY); ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.shadowBlur=15; ctx.beginPath(); ctx.arc(headX,headY,Math.max(1,Math.min(5,focal*.018/z)),0,Math.PI*2); ctx.fill(); ctx.restore();
+      }
+
+      function showContinuePrompt() {
+        waitingForContinue = true;
+        overlay.classList.add('waiting-to-continue');
+      }
+
+
+function enterMainSite() {
+  if (!waitingForContinue || introFinished) return;
+
+  waitingForContinue = false;
+
+  // Garante que o conteúdo principal abra do começo
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'instant'
+  });
+
+  overlay.classList.add('is-hidden');
+  document.body.classList.remove('intro-lock');
+
+  // Reforça a posição após a transição da introdução
+  window.setTimeout(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+
+    introFinished = true;
+    ctx.clearRect(0, 0, width, height);
+  }, 1550);
+}
+
+      function drawIntro(now) {
+        if (introFinished) return;
+        const elapsed = now - startTime;
+        const dt = Math.min((now - previousTime) / 1000, .04);
+        previousTime = now;
+        ctx.clearRect(0, 0, width, height);
+        const t = elapsed;
+
+        drawNebula(t);
+
+        let speed = 0;
+        if (t < accelFor) speed = .045 + 1.68 * easeIn(t / accelFor);
+        else if (t < cruiseEnd) speed = 1.73;
+        else if (t < messageAt) speed = 1.73 * (1 - smooth(cruiseEnd, messageAt, t));
+        else speed = 0;
+        if (reducedMotion) speed *= .58;
+
+        for (const star of stars) {
+          if (t < messageAt && speed > 0) {
+            star.z -= speed * dt;
+            if (star.z < .22) { Object.assign(star, newStar(false)); star.px = null; star.py = null; }
+          }
+          const p = projection(star);
+          if (p.x > -35 && p.x < width + 35 && p.y > -35 && p.y < height + 35) {
+            const pulse = .78 + .22 * Math.sin(now * .0015 + star.twinkle);
+            const radius = Math.min(5.2, star.size + (4.3 - Math.min(star.z, 4.3)) * .45);
+            const a = Math.min(1, star.alpha * pulse);
+            if (star.px !== null && star.py !== null && t < messageAt && speed > .22) {
+              ctx.beginPath(); ctx.moveTo(star.px, star.py); ctx.lineTo(p.x, p.y);
+              ctx.strokeStyle = `hsla(${star.hue},95%,84%,${a * Math.min(.8, speed * .48)})`;
+              ctx.lineWidth = Math.max(.35, radius * .36); ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.fillStyle = star.dust ? `hsla(${star.hue},88%,89%,${a * .5})` : `hsla(${star.hue},84%,96%,${a})`;
+            ctx.shadowBlur = star.dust ? 3 : 7;
+            ctx.shadowColor = `hsla(${star.hue},90%,76%,${a})`;
+            ctx.arc(p.x, p.y, star.dust ? radius * .52 : radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+          star.px = p.x; star.py = p.y;
+        }
+
+        const farBHAlpha = envelope(t, 6250, 6900, 7900, 8600) * .72;
+        const farBH = projectWorldObject(-.78, .48, 12.25, .055, t);
+        drawBlackHole(farBH.x, farBH.y, farBH.r, farBHAlpha, .2 + Math.sin(t * .00018) * .035);
+
+        const saturnAlpha = envelope(t, 3500, 4150, 7300, 8300);
+        const saturn = projectWorldObject(.80, -.36, 9.85, .22, t);
+        drawSaturn(saturn.x, saturn.y, saturn.r, saturnAlpha);
+
+        const earthAlpha = envelope(t, 5950, 6750, 8050, 9050);
+        const earth = projectWorldObject(-.70, .17, 12.45, .12, t);
+        drawEarth(earth.x, earth.y, earth.r, earthAlpha);
+
+        drawComet(t);
+
+        const blackAlpha = envelope(t, 8100, 9300, 10650, 11550);
+        const black = projectWorldObject(.12, -.08, 13.05, .165, t);
+        drawBlackHole(black.x, black.y, black.r, blackAlpha, -.12 + Math.sin(t * .0002) * .045);
+
+        if (t >= messageAt && !waitingForContinue && !introFinished) showContinuePrompt();
+        requestAnimationFrame(drawIntro);
+      }
+
+      window.addEventListener('resize', resizeIntro, { passive: true });
+      overlay.addEventListener('click', enterMainSite);
+      document.addEventListener('keydown', event => {
+        if ((event.code === 'Space' || event.code === 'Enter') && waitingForContinue) {
+          event.preventDefault();
+          enterMainSite();
+        }
       });
 
-      ctx.save();
-      ctx.strokeStyle = "rgba(167, 139, 250, 0.20)";
-      ctx.lineWidth = 1.2;
+      resizeIntro();
+      requestAnimationFrame(drawIntro);
+    })();
+  </script>
 
-      for (const [i, j] of tesseractEdges) {
-        ctx.beginPath();
-        ctx.moveTo(projected[i].px, projected[i].py);
-        ctx.lineTo(projected[j].px, projected[j].py);
-        ctx.stroke();
+  <!-- Script 2: Poeira Estelar + Mapa Celeste + Carrossel de Cards -->
+  <script>
+    
+/* Garante que o site comece sempre do topo */
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
+window.scrollTo(0, 0);
+
+window.addEventListener('pageshow', () => {
+  window.scrollTo(0, 0);
+});
+
+/* Poeira estelar */
+const dust = document.getElementById('dust'),
+      dctx = dust.getContext('2d');
+
+    let particles = [];
+
+    function resizeDust() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      dust.width = innerWidth * dpr;
+      dust.height = innerHeight * dpr;
+      dust.style.width = innerWidth + 'px';
+      dust.style.height = innerHeight + 'px';
+      dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      particles = Array.from({ length: Math.min(180, Math.floor(innerWidth * innerHeight / 6500)) }, () => ({
+        x: Math.random() * innerWidth,
+        y: Math.random() * innerHeight,
+        r: Math.random() * 1.4 + .2,
+        p: Math.random() * 6.28,
+        a: .2 + Math.random() * .6
+      }));
+    }
+
+    function twinkle(t = 0) {
+      dctx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const s of particles) {
+        dctx.fillStyle = `rgba(247,220,255,${s.a * (.7 + .3 * Math.sin(t * .0008 + s.p))})`;
+        dctx.beginPath();
+        dctx.arc(s.x, s.y, s.r, 0, 7);
+        dctx.fill();
       }
+      requestAnimationFrame(twinkle);
+    }
 
-      // Vertices dots
-      ctx.fillStyle = "rgba(196, 181, 253, 0.45)";
-      for (const p of projected) {
+    addEventListener('resize', resizeDust);
+    resizeDust();
+    twinkle();
+
+    const dateEl = document.getElementById('date');
+    const statusEl = document.getElementById('status');
+    const when = document.getElementById('when');
+
+    function localInputValue(d) {
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function showDate() {
+      const d = when.value ? new Date(when.value) : new Date();
+      dateEl.textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+    }
+
+    when.value = localInputValue(new Date());
+    showDate();
+
+    let engine = null, skyReady = false, initialCameraPositioned = false;
+
+    function initSky() {
+      try {
+        if (typeof SKY === 'undefined' || typeof SkyEngine === 'undefined') throw new Error('O motor astronômico não carregou.');
+        const canvas = document.getElementById('sky');
+        engine = new SkyEngine(canvas, SKY, { conNameKey: 'e', planets: true });
+        engine.start();
+        skyReady = true;
+        engine.set('constellations', true);
+        engine.set('labels', true);
+        engine.set('planets', true);
+        engine.set('milkyway', true);
+        statusEl.textContent = 'Catálogo carregado';
+        statusEl.style.color = '#b9ffdc';
+        setHorizon();
+      } catch (e) {
+        statusEl.textContent = 'Não foi possível carregar';
+        statusEl.style.color = '#ffb4df';
+        drawFallback();
+        document.getElementById('mapcaption').textContent = 'O motor astronômico não carregou. Confira sua conexão ou tente novamente. O desenho exibido é apenas decorativo e não representa posições reais.';
+      }
+    }
+
+    function setHorizon() {
+      if (!engine) return;
+      const lat = Number(document.getElementById('lat').value);
+      const lon = Number(document.getElementById('lon').value);
+      const d = when.value ? new Date(when.value) : new Date();
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        statusEl.textContent = 'Confira latitude/longitude';
+        return;
+      }
+      try {
+        engine.setHorizon(lat, lon, d);
+        if (engine.setDate) engine.setDate(d);
+        if (!initialCameraPositioned) {
+          engine.lookAtAltAz(0, 89);
+          initialCameraPositioned = true;
+        }
+        showDate();
+        statusEl.textContent = 'Céu calculado';
+        statusEl.style.color = '#b9ffdc';
+      } catch (e) {
+        statusEl.textContent = 'Erro ao calcular o céu';
+      }
+    }
+
+    document.getElementById('apply').addEventListener('click', setHorizon);
+    document.getElementById('now').addEventListener('click', () => {
+      when.value = localInputValue(new Date());
+      showDate();
+      setHorizon();
+    });
+    when.addEventListener('change', showDate);
+
+    function drawFallback() {
+      const c = document.getElementById('sky'), ctx = c.getContext('2d');
+      c.width = c.clientWidth * devicePixelRatio;
+      c.height = c.clientHeight * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      let r = Math.min(c.clientWidth, c.clientHeight) / 2;
+      ctx.fillStyle = '#080612';
+      ctx.fillRect(0, 0, c.clientWidth, c.clientHeight);
+      for (let i = 0; i < 240; i++) {
+        let x = Math.random() * c.clientWidth, y = Math.random() * c.clientHeight;
+        ctx.fillStyle = `rgba(250,225,255,${Math.random() * .8})`;
         ctx.beginPath();
-        ctx.arc(p.px, p.py, 2.2, 0, Math.PI * 2);
+        ctx.arc(x, y, Math.random() * 1.5, 0, 7);
         ctx.fill();
       }
-      ctx.restore();
-
-      drawFloatingTexts("matrix", "rgba(196, 181, 253, 0.24)");
+      ctx.strokeStyle = '#d7aaff88';
+      ctx.beginPath();
+      ctx.arc(c.clientWidth / 2, c.clientHeight / 2, r * .8, 0, 7);
+      ctx.stroke();
+      ctx.fillStyle = '#ffd7f1';
+      ctx.font = '30px Georgia';
+      ctx.textAlign = 'center';
+      ctx.fillText('♡', c.clientWidth / 2, c.clientHeight / 2 + 10);
     }
 
-    /**
-     * Draw Slide 13: Dark Galaxy Without Stars (Faint lonely dust ring)
-     */
-    function drawDarkGalaxy(time) {
-      const cx = width / 2;
-      const cy = height / 2;
-      const rx = Math.min(width, height) * 0.34;
-      const ry = rx * 0.35;
+    initSky();
 
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(-0.22 + Math.sin(time * 0.2) * 0.04);
+    /* Controle do Carrossel de Cards */
+    (() => {
+      const cards = Array.from(document.querySelectorAll('#cards-viewport .card'));
+      const dots = Array.from(document.querySelectorAll('#carousel-dots .carousel-dot'));
+      const prevBtn = document.getElementById('prev-card');
+      const nextBtn = document.getElementById('next-card');
+      const viewport = document.getElementById('cards-viewport');
+      let currentCard = 0;
 
-      for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, rx * (0.65 + i * 0.15), ry * (0.65 + i * 0.15), 0, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(148, 163, 184, ${0.07 - i * 0.015})`;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    /**
-     * Helper to render floating math/code fragments on Slides 10, 11, 12
-     */
-    function drawFloatingTexts(type, color) {
-      ctx.save();
-      ctx.font = `${width < 640 ? 11 : 13}px 'JetBrains Mono', monospace`;
-      ctx.fillStyle = color;
-
-      for (const item of floatingFragments) {
-        if (item.type !== type) continue;
-        item.y -= item.speed;
-        if (item.y < 0.08) item.y = 0.88;
-
-        const px = item.x * width;
-        const py = item.y * height;
-        ctx.fillText(item.text, px, py);
-      }
-      ctx.restore();
-    }
-
-    /**
-     * Main 60FPS Animation Loop
-     */
-    let lastTimestamp = performance.now();
-
-    function animate(timestamp) {
-      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
-      lastTimestamp = timestamp;
-      modeTime += dt;
-
-      // Smoothly interpolate background color
-      for (let c = 0; c < 3; c++) {
-        currentBg[c] += (targetBg[c] - currentBg[c]) * 0.05;
+      function showCard(index) {
+        currentCard = (index + cards.length) % cards.length;
+        cards.forEach((card, i) => card.classList.toggle('active', i === currentCard));
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentCard));
       }
 
-      ctx.fillStyle = `rgb(${Math.round(currentBg[0])}, ${Math.round(currentBg[1])}, ${Math.round(currentBg[2])})`;
-      ctx.fillRect(0, 0, width, height);
+      prevBtn.addEventListener('click', () => showCard(currentCard - 1));
+      nextBtn.addEventListener('click', () => showCard(currentCard + 1));
+      dots.forEach(dot => {
+        dot.addEventListener('click', () => showCard(Number(dot.dataset.index)));
+      });
 
-      // Mode-specific background drawings
-      if (activeMode === "dirac_delta") {
-        drawDiracDelta(modeTime);
-      } else if (activeMode === "code_glitch") {
-        drawCodeGlitch(modeTime);
-      } else if (activeMode === "hyper_matrix") {
-        drawHyperMatrix(modeTime);
-      } else if (activeMode === "dark_galaxy") {
-        drawDarkGalaxy(modeTime);
-      }
+      /* Suporte a gesto de deslizar (swipe) no celular */
+      let touchStartX = 0;
+      viewport.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
 
-      // Slide 8: Concentric echo soundwaves (repeating her name aloud)
-      if (activeMode === "echo_voices") {
-        if (Math.random() < 0.035 || echoWaves.length === 0) {
-          echoWaves.push({
-            r: 10,
-            maxR: Math.min(width, height) * 0.46,
-            alpha: 0.32
-          });
+      viewport.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(diff) > 45) {
+          showCard(diff < 0 ? currentCard + 1 : currentCard - 1);
         }
-      }
-
-      for (let i = echoWaves.length - 1; i >= 0; i--) {
-        const wave = echoWaves[i];
-        wave.r += 1.15;
-        wave.alpha *= 0.988;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, wave.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(110, 231, 183, ${wave.alpha})`;
-        ctx.lineWidth = 1.3;
-        ctx.stroke();
-        ctx.restore();
-
-        if (wave.alpha < 0.015 || wave.r > wave.maxR) {
-          echoWaves.splice(i, 1);
-        }
-      }
-
-      // Update & Draw Particles according to current narrative mode
-      const cx = width / 2;
-      const cy = height / 2;
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.twinklePhase += p.twinkleSpeed;
-        const twinkle = 0.65 + 0.35 * Math.sin(p.twinklePhase);
-
-        let targetAlpha = p.baseAlpha * twinkle;
-        let fillStyle = `rgba(226, 232, 240, ${p.alpha})`;
-
-        if (activeMode === "stardust_calm") {
-          p.x += p.vx;
-          p.y += p.vy;
-          fillStyle = `rgba(186, 230, 253, ${p.alpha})`;
-        } else if (activeMode === "stardust_warm") {
-          p.x += p.vx * 1.3;
-          p.y += p.vy * 1.4;
-          fillStyle = i % 2 === 0
-            ? `rgba(253, 230, 138, ${p.alpha})`
-            : `rgba(216, 180, 254, ${p.alpha})`;
-        } else if (activeMode === "echo_voices") {
-          p.x += Math.sin(modeTime * 1.5 + i) * 0.45;
-          p.y += p.vy * 1.6;
-          fillStyle = i % 2 === 0
-            ? `rgba(110, 231, 183, ${p.alpha})`
-            : `rgba(253, 224, 71, ${p.alpha})`;
-        } else if (activeMode === "vortex_mind") {
-          // Swirling erratic vortex around the center
-          p.angle += p.orbitSpeed * 2.8;
-          const targetX = cx + Math.cos(p.angle) * p.orbitRadius;
-          const targetY = cy + Math.sin(p.angle) * p.orbitRadius;
-          p.x += (targetX - p.x) * 0.08;
-          p.y += (targetY - p.y) * 0.08;
-          fillStyle = `rgba(251, 113, 133, ${p.alpha})`;
-        } else if (activeMode === "dirac_delta") {
-          // Drawn toward x = center, shooting upward
-          p.x += (cx - p.x) * 0.015 + p.vx * 2;
-          p.y += p.vy * 4.5;
-          fillStyle = `rgba(103, 232, 249, ${p.alpha})`;
-        } else if (activeMode === "code_glitch") {
-          // High speed horizontal/vertical data stream
-          p.x += (i % 2 === 0 ? 1 : -1) * 4.2;
-          fillStyle = i % 3 === 0
-            ? `rgba(248, 113, 113, ${p.alpha})`
-            : `rgba(251, 191, 36, ${p.alpha * 0.8})`;
-        } else if (activeMode === "hyper_matrix") {
-          p.x += p.vx * 0.8;
-          p.y += p.vy * 0.8;
-          fillStyle = `rgba(196, 181, 253, ${p.alpha})`;
-        } else if (activeMode === "dark_galaxy") {
-          // Stars extinguish! Almost pitch black void
-          targetAlpha = 0.015;
-          p.x += p.vx * 0.15;
-          p.y += p.vy * 0.15;
-          fillStyle = `rgba(148, 163, 184, ${p.alpha})`;
-        } else if (activeMode === "stars_reborn") {
-          p.x += p.vx * 0.9;
-          p.y += p.vy * 0.9;
-          targetAlpha = (p.baseAlpha + 0.2) * twinkle;
-          fillStyle = i % 2 === 0
-            ? `rgba(186, 230, 253, ${p.alpha})`
-            : `rgba(221, 214, 254, ${p.alpha})`;
-        } else if (activeMode === "finale_love") {
-          p.x += Math.sin(modeTime + i) * 0.25;
-          p.y += p.vy * 1.1;
-          targetAlpha = (p.baseAlpha + 0.25) * twinkle;
-          fillStyle = i % 2 === 0
-            ? `rgba(254, 205, 211, ${p.alpha})`
-            : `rgba(253, 230, 138, ${p.alpha})`;
-        }
-
-        // Smooth alpha transition (crucial for Slide 13 extinguishing and Slide 14 reigniting)
-        p.alpha += (targetAlpha - p.alpha) * 0.06;
-
-        // Screen wrap-around
-        if (p.x < -10) p.x = width + 10;
-        if (p.x > width + 10) p.x = -10;
-        if (p.y < -10) p.y = height + 10;
-        if (p.y > height + 10) p.y = -10;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = fillStyle;
-        ctx.fill();
-      }
-
-      // Finale shooting stars
-      if (activeMode === "finale_love" && Math.random() < 0.03) {
-        shootingStars.push({
-          x: Math.random() * width * 0.8,
-          y: Math.random() * height * 0.4,
-          vx: 6 + Math.random() * 4,
-          vy: 2.5 + Math.random() * 2,
-          len: 55 + Math.random() * 35,
-          alpha: 0.9
-        });
-      }
-
-      for (let i = shootingStars.length - 1; i >= 0; i--) {
-        const st = shootingStars[i];
-        st.x += st.vx;
-        st.y += st.vy;
-        st.alpha *= 0.96;
-
-        ctx.save();
-        const grad = ctx.createLinearGradient(
-          st.x, st.y,
-          st.x - st.vx * (st.len / 8),
-          st.y - st.vy * (st.len / 8)
-        );
-        grad.addColorStop(0, `rgba(254, 205, 211, ${st.alpha})`);
-        grad.addColorStop(1, "rgba(254, 205, 211, 0)");
-
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.moveTo(st.x, st.y);
-        ctx.lineTo(st.x - st.vx * (st.len / 8), st.y - st.vy * (st.len / 8));
-        ctx.stroke();
-        ctx.restore();
-
-        if (st.alpha < 0.03) {
-          shootingStars.splice(i, 1);
-        }
-      }
-
-      // Draw interactive tap ripples
-      for (let i = tapRipples.length - 1; i >= 0; i--) {
-        const r = tapRipples[i];
-        r.radius += (r.maxRadius - r.radius) * 0.12;
-        r.alpha *= 0.92;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(226, 232, 240, ${r.alpha})`;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        ctx.restore();
-
-        if (r.alpha < 0.02) {
-          tapRipples.splice(i, 1);
-        }
-      }
-
-      requestAnimationFrame(animate);
-    }
-
-    /**
-     * ============================================================================
-     * SLIDE RENDERING & NAVIGATION LOGIC
-     * ============================================================================
-     */
-    function applyTypographyStyle(type) {
-      messageText.className = "transition-all duration-500 ";
-
-      if (type === "serif-hero") {
-        messageText.className += "message-serif text-4xl sm:text-5xl md:text-6xl font-normal text-slate-100 tracking-wide leading-tight";
-      } else if (type === "serif-emotional") {
-        messageText.className += "message-serif text-2xl sm:text-4xl md:text-[42px] font-normal text-slate-100 leading-relaxed sm:leading-relaxed";
-      } else if (type === "code-hybrid") {
-        messageText.className += "message-sans text-xl sm:text-2xl md:text-3xl font-light text-slate-100 leading-relaxed sm:leading-relaxed glitch-active";
-      } else if (type === "serif-finale") {
-        messageText.className += "message-serif text-3xl sm:text-4xl md:text-5xl font-normal text-slate-100 leading-relaxed";
-      } else {
-        // default 'sans-clean'
-        messageText.className += "message-sans text-xl sm:text-2xl md:text-[28px] font-light text-slate-100/95 leading-relaxed sm:leading-relaxed tracking-wide";
-      }
-    }
-
-    function renderSlide(index, direction = "next") {
-      const slide = slides[index];
-
-      // Update visual canvas state
-      activeMode = slide.mode;
-      targetBg = [...slide.bgHex];
-      ambientGlow.style.background = slide.glow;
-
-      // Update header UI
-      const progressPercent = ((index + 1) / slides.length) * 100;
-      progressBar.style.width = `${progressPercent}%`;
-      slideCounter.textContent = `${index + 1} / ${slides.length}`;
-      themeBadge.textContent = slide.badge;
-
-      // Back button visibility
-      if (index > 0) {
-        prevBtn.classList.remove("opacity-0", "pointer-events-none");
-        prevBtn.classList.add("opacity-100", "pointer-events-auto");
-      } else {
-        prevBtn.classList.add("opacity-0", "pointer-events-none");
-        prevBtn.classList.remove("opacity-100", "pointer-events-auto");
-      }
-
-      // Update ornament & subcaption
-      ornamentEl.innerHTML = slide.ornament || "";
-      if (slide.subcaption) {
-        subcaptionEl.textContent = slide.subcaption;
-        subcaptionEl.classList.remove("opacity-0");
-        subcaptionEl.classList.add("opacity-100");
-      } else {
-        subcaptionEl.classList.remove("opacity-100");
-        subcaptionEl.classList.add("opacity-0");
-      }
-
-      // Update Typography & HTML content
-      applyTypographyStyle(slide.typography);
-      messageText.innerHTML = slide.html;
-
-      // Update bottom prompt / replay button
-      if (index === 0) {
-        tapPrompt.classList.remove("hidden");
-        touchIconWrapper.classList.remove("hidden");
-        tapPromptText.textContent = "Toque em qualquer lugar na tela para começar";
-        replayBtn.classList.add("hidden");
-        replayBtn.classList.remove("flex");
-      } else if (index < slides.length - 1) {
-        tapPrompt.classList.remove("hidden");
-        touchIconWrapper.classList.add("hidden");
-        tapPromptText.textContent = "Toque na tela para continuar";
-        replayBtn.classList.add("hidden");
-        replayBtn.classList.remove("flex");
-      } else {
-        // Final slide (Slide 16)
-        tapPrompt.classList.add("hidden");
-        replayBtn.classList.remove("hidden");
-        replayBtn.classList.add("flex");
-      }
-    }
-
-    function goToSlide(newIndex, direction = "next") {
-      if (isTransitioning) return;
-      if (newIndex < 0 || newIndex >= slides.length) return;
-
-      isTransitioning = true;
-      currentIndex = newIndex;
-
-      // Animate out current text
-      messageContainer.classList.remove("slide-visible");
-      messageContainer.classList.add(direction === "next" ? "slide-hidden-prev" : "slide-hidden-next");
-      subcaptionEl.classList.remove("opacity-100");
-      subcaptionEl.classList.add("opacity-0");
-
-      setTimeout(() => {
-        // Position incoming slide from opposite side
-        messageContainer.style.transition = "none";
-        messageContainer.classList.remove("slide-hidden-prev", "slide-hidden-next");
-        messageContainer.classList.add(direction === "next" ? "slide-hidden-next" : "slide-hidden-prev");
-
-        renderSlide(currentIndex, direction);
-
-        // Force reflow
-        void messageContainer.offsetWidth;
-
-        // Animate in new text
-        messageContainer.style.transition = "";
-        messageContainer.classList.remove("slide-hidden-next", "slide-hidden-prev");
-        messageContainer.classList.add("slide-visible");
-
-        setTimeout(() => {
-          isTransitioning = false;
-        }, 520);
-      }, 420);
-    }
-
-    /**
-     * ============================================================================
-     * EVENT LISTENERS (TAP, CLICK, KEYBOARD, REPLAY)
-     * ============================================================================
-     */
-    stageEl.addEventListener("click", (e) => {
-      createTapRipple(e.clientX || width / 2, e.clientY || height / 2);
-      if (currentIndex < slides.length - 1) {
-        goToSlide(currentIndex + 1, "next");
-      }
-    });
-
-    prevBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (currentIndex > 0) {
-        goToSlide(currentIndex - 1, "prev");
-      }
-    });
-
-    replayBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      goToSlide(0, "prev");
-    });
-
-    // Keyboard navigation support
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        if (currentIndex < slides.length - 1) {
-          createTapRipple(width / 2, height / 2);
-          goToSlide(currentIndex + 1, "next");
-        }
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        if (currentIndex > 0) {
-          goToSlide(currentIndex - 1, "prev");
-        }
-      }
-    });
-
-    // Initialize on load
-    window.onload = function () {
-      renderSlide(0, "next");
-      requestAnimationFrame(animate);
-    };
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
